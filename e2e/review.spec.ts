@@ -13,7 +13,7 @@ const check = (page: Page, title: string) => page.getByRole("listitem").filter({
 test("a sample VAT invoice is read, passes every check and can be approved", async ({ page }) => {
   await runSample(page, "VAT invoice");
 
-  await expect(status(page)).toHaveText("Ready to approve", { timeout: 30_000 });
+  await expect(status(page)).toHaveText("Ready to approve", { timeout: 60_000 });
   await expect(page.getByLabel("Vendor", { exact: true })).toHaveValue("Bluepeak Office Supply Corp.");
   await expect(page.getByLabel("Total", { exact: true })).toHaveValue("7,392.00");
   await expect(check(page, "VAT is 12%")).toContainText("Passed");
@@ -31,7 +31,7 @@ test("a sample VAT invoice is read, passes every check and can be approved", asy
 test("the wrong-total sample blocks approval until a person fixes the total", async ({ page }) => {
   await runSample(page, "Wrong total");
 
-  await expect(status(page)).toHaveText("Needs review", { timeout: 30_000 });
+  await expect(status(page)).toHaveText("Needs review", { timeout: 60_000 });
   await expect(check(page, "Totals add up")).toContainText("Failed");
   await expect(page.getByRole("button", { name: "Approve" })).toBeDisabled();
 
@@ -44,10 +44,10 @@ test("the wrong-total sample blocks approval until a person fixes the total", as
 
 test("running the same invoice twice reuses the analysis and flags the duplicate", async ({ page }) => {
   await runSample(page, "VAT invoice");
-  await expect(status(page)).toHaveText("Ready to approve", { timeout: 30_000 });
+  await expect(status(page)).toHaveText("Ready to approve", { timeout: 60_000 });
 
   await runSample(page, "VAT invoice");
-  await expect(status(page)).toHaveText("Needs review", { timeout: 30_000 });
+  await expect(status(page)).toHaveText("Needs review", { timeout: 60_000 });
   await expect(check(page, "Not a duplicate")).toContainText("Failed");
   await expect(page.getByText("Reused the analysis of an identical file")).toBeVisible();
 

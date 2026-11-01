@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { useMongo } from "../test/mongo.ts";
+import { setupMongo } from "../test/mongo.ts";
 import { dayKey, monthKey, take } from "./quota.ts";
 
-const freshDb = useMongo();
+const freshDb = setupMongo();
 
 describe("take", () => {
   it("allows use up to the limit, then refuses", async () => {

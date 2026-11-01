@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { useMongo } from "../test/mongo.ts";
+import { setupMongo } from "../test/mongo.ts";
 import { documents, type DocRecord } from "./db.ts";
 import type { AnalyzeResult } from "./extract.ts";
 import { processDocument, recheck, type PipelineDeps } from "./pipeline.ts";
 
-const freshDb = useMongo();
+const freshDb = setupMongo();
 const now = new Date("2026-10-31T02:00:00Z");
 
 const str = (valueString: string) => ({ type: "string", valueString, confidence: 0.95, boundingRegions: [{ pageNumber: 1 }] });

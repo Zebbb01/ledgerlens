@@ -1,26 +1,45 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+/* LedgerLens tokens. One accent (indigo); green, red and amber are reserved for
+   check results, because in accounting they already mean pass, fail and caution. */
+@theme {
+  --color-canvas: #f5f6f8;
+  --color-surface: #ffffff;
+  --color-ink: #111827;
+  --color-muted: #4b5563;
+  --color-line: #d8dce3;
+  --color-brand: #4338ca;
+  --color-brand-strong: #3730a3;
+  --color-on-brand: #ffffff;
+  --color-pass: #15803d;
+  --color-fail: #b91c1c;
+  --color-warn: #a16207;
+  --color-skip: #6b7280;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --color-canvas: #0b0d12;
+    --color-surface: #13161d;
+    --color-ink: #e5e7eb;
+    --color-muted: #9ca3af;
+    --color-line: #2a303c;
+    --color-brand: #a5b4fc;
+    --color-brand-strong: #c7d2fe;
+    --color-on-brand: #111827;
+    --color-pass: #4ade80;
+    --color-fail: #f87171;
+    --color-warn: #fbbf24;
+    --color-skip: #9ca3af;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
 }

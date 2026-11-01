@@ -3,7 +3,7 @@ import { MongoClient, type Db } from "mongodb";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { afterAll, beforeAll } from "vitest";
 
-export function useMongo(): () => Db {
+export function setupMongo(): () => Db {
   let server: MongoMemoryServer;
   let client: MongoClient;
   beforeAll(async () => {

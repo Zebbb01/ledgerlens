@@ -39,3 +39,20 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+!.env.example
+
+# local Azure stand-ins and test output
+.azurite/
+__azurite_db_*
+__blobstorage__/
+__queuestorage__/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# terraform
+infra/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars

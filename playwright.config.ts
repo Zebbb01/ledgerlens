@@ -12,7 +12,10 @@ const env = {
 
 export default defineConfig({
   testDir: "e2e",
-  timeout: 60_000,
+  timeout: 120_000,
+  // The dev server compiles each route on first use, so the first navigation of a
+  // run can take several seconds.
+  expect: { timeout: 20_000 },
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 1 : undefined,

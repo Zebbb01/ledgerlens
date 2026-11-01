@@ -1,0 +1,54 @@
+{
+  "bluepeak-vat-invoice.pdf": {
+    "vendorName": "Bluepeak Office Supply Corp.",
+    "vendorTaxId": "123-456-789-000",
+    "invoiceId": "INV-2026-1042",
+    "invoiceDate": "2026-10-05",
+    "dueDate": "2026-11-04",
+    "currency": "PHP",
+    "subtotal": 660000,
+    "tax": 79200,
+    "total": 739200,
+    "vatableSales": 660000,
+    "vatAmount": 79200
+  },
+  "ironleaf-receipt.pdf": {
+    "vendorName": "Ironleaf Hardware Trading",
+    "vendorTaxId": "987-654-321-00000",
+    "invoiceId": "004512",
+    "invoiceDate": "2026-10-20",
+    "dueDate": null,
+    "currency": "PHP",
+    "subtotal": 283482,
+    "tax": 34018,
+    "total": 317500,
+    "vatableSales": 283482,
+    "vatAmount": 34018
+  },
+  "cloudnote-saas-invoice.pdf": {
+    "vendorName": "Cloudnote Inc.",
+    "vendorTaxId": null,
+    "invoiceId": "CN-88213",
+    "invoiceDate": "2026-10-01",
+    "dueDate": "2026-10-31",
+    "currency": "USD",
+    "subtotal": 6000,
+    "tax": 0,
+    "total": 6000,
+    "vatableSales": null,
+    "vatAmount": null
+  },
+  "bluepeak-math-error.pdf": {
+    "vendorName": "Bluepeak Office Supply Corp.",
+    "vendorTaxId": "123-456-789-000",
+    "invoiceId": "INV-2026-1043",
+    "invoiceDate": "2026-10-12",
+    "dueDate": "2026-11-11",
+    "currency": "PHP",
+    "subtotal": 150000,
+    "tax": 18000,
+    "total": 186000,
+    "vatableSales": 150000,
+    "vatAmount": 18000
+  }
+}

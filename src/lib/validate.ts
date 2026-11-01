@@ -105,7 +105,7 @@ export function validate(inv: Invoice, ctx: { today: string; duplicateOf?: strin
   return checks;
 }
 
-export const statusFor = (checks: Check[]) =>
+export const statusFor = (checks: Check[]): "ready" | "needs_review" =>
   checks.some((c) => c.status === "fail" || c.status === "warn") ? "needs_review" : "ready";
 
 export const canApprove = (checks: Check[]) => !checks.some((c) => c.status === "fail");

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { useMongo } from "../test/mongo.ts";
 import { documents, type DocRecord } from "./db.ts";
 import type { AnalyzeResult } from "./extract.ts";
-import { processDocument, type PipelineDeps } from "./pipeline.ts";
+import { processDocument, recheck, type PipelineDeps } from "./pipeline.ts";
 
 const freshDb = useMongo();
 const now = new Date("2026-10-31T02:00:00Z");
@@ -120,6 +120,13 @@ describe("processDocument", () => {
     expect((await documents(db).findOne({ _id: "d1" }))?.status).toBe("approved");
   });
 
+  it("picks up a document left 'processing' by a worker that stopped mid-way", async () => {
+    const db = freshDb();
+    await documents(db).insertOne(doc("d1", "sha-a", "processing"));
+
+    await expect(processDocument(db, ref("d1"), deps())).resolves.toBe("ready");
+  });
+
   it("records the reason Document Intelligence gives for a failure", async () => {
     const db = freshDb();
     await documents(db).insertOne(doc("d1", "sha-a"));
@@ -156,6 +163,21 @@ describe("processDocument", () => {
     await processDocument(db, ref("d1"), deps({ suggestCategory: async () => "Office supplies" }));
 
     expect(await documents(db).findOne({ _id: "d1" })).toMatchObject({ category: "Office supplies", categorySource: "model" });
+  });
+
+  it("rechecks a corrected invoice, keeping the duplicate check", async () => {
+    const db = freshDb();
+    await documents(db).insertMany([doc("d1", "sha-a"), doc("d2", "sha-b")]);
+    await processDocument(db, ref("d1"), deps());
+    await processDocument(db, ref("d2"), deps());
+    const d2 = (await documents(db).findOne({ _id: "d2" }))!;
+    const corrected = { ...d2.invoice!, total: { value: 1, confidence: 1, page: 1 } };
+
+    const { checks, status } = await recheck(db, d2, corrected, now);
+
+    expect(checks.find((c) => c.id === "total-math")?.status).toBe("fail");
+    expect(checks.find((c) => c.id === "duplicate")?.status).toBe("fail");
+    expect(status).toBe("needs_review");
   });
 
   it("still finishes when the category model fails", async () => {

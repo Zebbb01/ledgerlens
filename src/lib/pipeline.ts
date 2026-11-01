@@ -39,6 +39,26 @@ function publicMessage(e: unknown) {
   return "Processing failed. Run it again; if it keeps failing, the file may be unreadable.";
 }
 
+// Runs the checks, including the lookup for another document in the same
+// workspace with this vendor and invoice number. Also used after a person edits.
+export async function recheck(db: Db, doc: DocRecord, invoice: Invoice, now = new Date()) {
+  const duplicate =
+    invoice.vendorName.value && invoice.invoiceId.value
+      ? await documents(db).findOne(
+          {
+            workspaceId: doc.workspaceId,
+            _id: { $ne: doc._id },
+            status: { $ne: "failed" },
+            "invoice.vendorName.value": invoice.vendorName.value,
+            "invoice.invoiceId.value": invoice.invoiceId.value,
+          },
+          { projection: { fileName: 1 } },
+        )
+      : null;
+  const checks = validate(invoice, { today: latestToday(now), duplicateOf: duplicate?.fileName });
+  return { checks, status: statusFor(checks) };
+}
+
 export async function processDocument(
   db: Db,
   ref: { id: string; workspaceId: string },
@@ -46,8 +66,10 @@ export async function processDocument(
 ): Promise<DocRecord["status"] | "skipped"> {
   const now = (deps.now ?? (() => new Date()))();
   const where = { _id: ref.id, workspaceId: ref.workspaceId };
+  // "processing" too: the queue redelivers a message when a worker stopped before
+  // finishing, and the queue's visibility timeout keeps two workers apart.
   const doc = await documents(db).findOneAndUpdate(
-    { ...where, status: "queued" },
+    { ...where, status: { $in: ["queued", "processing"] } },
     { $set: { status: "processing", updatedAt: now } },
     { returnDocument: "after" },
   );
@@ -65,22 +87,8 @@ export async function processDocument(
     }
 
     const invoice = normalize(result);
-    const duplicate =
-      invoice.vendorName.value && invoice.invoiceId.value
-        ? await documents(db).findOne(
-            {
-              workspaceId: ref.workspaceId,
-              _id: { $ne: ref.id },
-              status: { $ne: "failed" },
-              "invoice.vendorName.value": invoice.vendorName.value,
-              "invoice.invoiceId.value": invoice.invoiceId.value,
-            },
-            { projection: { fileName: 1 } },
-          )
-        : null;
-    const checks = validate(invoice, { today: latestToday(now), duplicateOf: duplicate?.fileName });
+    const { checks, status } = await recheck(db, doc, invoice, now);
     const category = deps.suggestCategory ? await deps.suggestCategory(invoice).catch(() => null) : null;
-    const status = statusFor(checks);
 
     await documents(db).updateOne(where, {
       $set: { status, invoice, checks, cached, category, categorySource: category ? "model" : null, error: null, updatedAt: now },

@@ -2,25 +2,46 @@
   "name": "ledgerlens",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
+  "description": "Reads invoices and receipts with Azure AI Document Intelligence, checks the numbers in code, and hands verified bills to the books.",
+  "engines": {
+    "node": ">=22.16"
+  },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 3200",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "worker": "node --experimental-strip-types --disable-warning=ExperimentalWarning src/worker/run.ts",
+    "services": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/dev-services.ts",
+    "samples": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/make-samples.ts",
+    "eval": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/eval.ts"
   },
   "dependencies": {
+    "@azure/identity": "^4.14.1",
+    "@azure/storage-blob": "^12.34.0",
+    "@azure/storage-queue": "^12.32.0",
+    "mongodb": "^7.8.0",
     "next": "16.4.3",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/turbopack": "^4",
-    "@types/node": "^20",
+    "@types/node": "^22.20.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "azurite": "^3.37.0",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
+    "mongodb-memory-server": "^11.3.0",
+    "pdf-lib": "^1.17.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.5"
   }
 }

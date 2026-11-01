@@ -1,0 +1,864 @@
+{
+  "bluepeak-vat-invoice.pdf": {
+    "apiVersion": "2024-11-30",
+    "modelId": "prebuilt-invoice",
+    "content": "Bluepeak Office Supply Corp.\nUnit 4B, Ortigas Center, Pasig City, Metro Manila\nVAT Reg. TIN: 123-456-789-000\nSALES INVOICE\nInvoice No. INV-2026-1042\nDate: October 5, 2026\nDue: November 4, 2026\nBill to\nHarbor & Pine Cafe\nDescription Qty Unit price Amount\nA4 bond paper 70gsm, ream 10 245.00 2,450.00\nToner cartridge TN-2380 2 1,850.00 3,700.00\nHeavy-duty stapler 1 450.00 450.00\nVATable Sales PHP 6,600.00\nVAT-Exempt Sales PHP 0.00\nZero-Rated Sales PHP 0.00\nVAT Amount PHP 792.00\nTOTAL AMOUNT DUE PHP 7,392.00\nSample document generated for LedgerLens. All names and numbers are fictitious.",
+    "pages": [
+      {
+        "pageNumber": 1
+      }
+    ],
+    "documents": [
+      {
+        "docType": "invoice",
+        "fields": {
+          "VendorName": {
+            "type": "string",
+            "valueString": "Bluepeak Office Supply Corp.",
+            "content": "Bluepeak Office Supply Corp.",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "CustomerName": {
+            "type": "string",
+            "valueString": "Harbor & Pine Cafe",
+            "content": "Harbor & Pine Cafe",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "InvoiceId": {
+            "type": "string",
+            "valueString": "INV-2026-1042",
+            "content": "INV-2026-1042",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "InvoiceDate": {
+            "type": "date",
+            "valueDate": "2026-10-05",
+            "content": "October 5, 2026",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "SubTotal": {
+            "type": "currency",
+            "valueCurrency": {
+              "amount": 6600,
+              "currencyCode": "PHP"
+            },
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "TotalTax": {
+            "type": "currency",
+            "valueCurrency": {
+              "amount": 792,
+              "currencyCode": "PHP"
+            },
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "InvoiceTotal": {
+            "type": "currency",
+            "valueCurrency": {
+              "amount": 7392,
+              "currencyCode": "PHP"
+            },
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "Items": {
+            "type": "array",
+            "valueArray": [
+              {
+                "type": "object",
+                "valueObject": {
+                  "Description": {
+                    "type": "string",
+                    "valueString": "A4 bond paper 70gsm, ream",
+                    "content": "A4 bond paper 70gsm, ream",
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  },
+                  "Quantity": {
+                    "type": "number",
+                    "valueNumber": 10,
+                    "confidence": 0.95
+                  },
+                  "UnitPrice": {
+                    "type": "currency",
+                    "valueCurrency": {
+                      "amount": 245,
+                      "currencyCode": "PHP"
+                    },
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  },
+                  "Amount": {
+                    "type": "currency",
+                    "valueCurrency": {
+                      "amount": 2450,
+                      "currencyCode": "PHP"
+                    },
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "valueObject": {
+                  "Description": {
+                    "type": "string",
+                    "valueString": "Toner cartridge TN-2380",
+                    "content": "Toner cartridge TN-2380",
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  },
+                  "Quantity": {
+                    "type": "number",
+                    "valueNumber": 2,
+                    "confidence": 0.95
+                  },
+                  "UnitPrice": {
+                    "type": "currency",
+                    "valueCurrency": {
+                      "amount": 1850,
+                      "currencyCode": "PHP"
+                    },
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  },
+                  "Amount": {
+                    "type": "currency",
+                    "valueCurrency": {
+                      "amount": 3700,
+                      "currencyCode": "PHP"
+                    },
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "valueObject": {
+                  "Description": {
+                    "type": "string",
+                    "valueString": "Heavy-duty stapler",
+                    "content": "Heavy-duty stapler",
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  },
+                  "Quantity": {
+                    "type": "number",
+                    "valueNumber": 1,
+                    "confidence": 0.95
+                  },
+                  "UnitPrice": {
+                    "type": "currency",
+                    "valueCurrency": {
+                      "amount": 450,
+                      "currencyCode": "PHP"
+                    },
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  },
+                  "Amount": {
+                    "type": "currency",
+                    "valueCurrency": {
+                      "amount": 450,
+                      "currencyCode": "PHP"
+                    },
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "VendorTaxId": {
+            "type": "string",
+            "valueString": "123-456-789-000",
+            "content": "123-456-789-000",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "DueDate": {
+            "type": "date",
+            "valueDate": "2026-11-04",
+            "content": "November 4, 2026",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "ironleaf-receipt.pdf": {
+    "apiVersion": "2024-11-30",
+    "modelId": "prebuilt-invoice",
+    "content": "Ironleaf Hardware Trading\n88 Rizal Avenue, Davao City\nVAT Reg. TIN: 987-654-321-00000\nOFFICIAL RECEIPT\nOR No. 004512\nDate: 10/20/2026\nBill to\nHarbor & Pine Cafe\nDescription Qty Unit price Amount\nPortland cement, 40 kg 5 285.00 1,425.00\nDeformed steel bar, 10 mm 10 175.00 1,750.00\nTotal Sales (VAT Inclusive) PHP 3,175.00\nVATable Sales PHP 2,834.82\nVAT Amount PHP 340.18\nVAT-Exempt Sales PHP 0.00\nTOTAL AMOUNT DUE PHP 3,175.00\nSample document generated for LedgerLens. All names and numbers are fictitious.",
+    "pages": [
+      {
+        "pageNumber": 1
+      }
+    ],
+    "documents": [
+      {
+        "docType": "invoice",
+        "fields": {
+          "VendorName": {
+            "type": "string",
+            "valueString": "Ironleaf Hardware Trading",
+            "content": "Ironleaf Hardware Trading",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "CustomerName": {
+            "type": "string",
+            "valueString": "Harbor & Pine Cafe",
+            "content": "Harbor & Pine Cafe",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "InvoiceId": {
+            "type": "string",
+            "valueString": "004512",
+            "content": "004512",
+            "confidence": 0.71,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "InvoiceDate": {
+            "type": "date",
+            "valueDate": "2026-10-20",
+            "content": "10/20/2026",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "SubTotal": {
+            "type": "currency",
+            "valueCurrency": {
+              "amount": 2834.82,
+              "currencyCode": "PHP"
+            },
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "TotalTax": {
+            "type": "currency",
+            "valueCurrency": {
+              "amount": 340.18,
+              "currencyCode": "PHP"
+            },
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "InvoiceTotal": {
+            "type": "currency",
+            "valueCurrency": {
+              "amount": 3175,
+              "currencyCode": "PHP"
+            },
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "Items": {
+            "type": "array",
+            "valueArray": [
+              {
+                "type": "object",
+                "valueObject": {
+                  "Description": {
+                    "type": "string",
+                    "valueString": "Portland cement, 40 kg",
+                    "content": "Portland cement, 40 kg",
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  },
+                  "Quantity": {
+                    "type": "number",
+                    "valueNumber": 5,
+                    "confidence": 0.95
+                  },
+                  "UnitPrice": {
+                    "type": "currency",
+                    "valueCurrency": {
+                      "amount": 285,
+                      "currencyCode": "PHP"
+                    },
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  },
+                  "Amount": {
+                    "type": "currency",
+                    "valueCurrency": {
+                      "amount": 1425,
+                      "currencyCode": "PHP"
+                    },
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "valueObject": {
+                  "Description": {
+                    "type": "string",
+                    "valueString": "Deformed steel bar, 10 mm",
+                    "content": "Deformed steel bar, 10 mm",
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  },
+                  "Quantity": {
+                    "type": "number",
+                    "valueNumber": 10,
+                    "confidence": 0.95
+                  },
+                  "UnitPrice": {
+                    "type": "currency",
+                    "valueCurrency": {
+                      "amount": 175,
+                      "currencyCode": "PHP"
+                    },
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  },
+                  "Amount": {
+                    "type": "currency",
+                    "valueCurrency": {
+                      "amount": 1750,
+                      "currencyCode": "PHP"
+                    },
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "VendorTaxId": {
+            "type": "string",
+            "valueString": "987-654-321-00000",
+            "content": "987-654-321-00000",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "cloudnote-saas-invoice.pdf": {
+    "apiVersion": "2024-11-30",
+    "modelId": "prebuilt-invoice",
+    "content": "Cloudnote Inc.\n500 Howard Street, San Francisco, CA 94105\nbilling@cloudnote.example\nINVOICE\nInvoice # CN-88213\nDate: Oct 1, 2026\nDue: Oct 31, 2026\nBill to\nHarbor & Pine Cafe\nDescription Qty Unit price Amount\nTeam plan, monthly (per seat) 5 12.00 60.00\nSubtotal USD 60.00\nTax USD 0.00\nTotal due (USD) USD 60.00\nSample document generated for LedgerLens. All names and numbers are fictitious.",
+    "pages": [
+      {
+        "pageNumber": 1
+      }
+    ],
+    "documents": [
+      {
+        "docType": "invoice",
+        "fields": {
+          "VendorName": {
+            "type": "string",
+            "valueString": "Cloudnote Inc.",
+            "content": "Cloudnote Inc.",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "CustomerName": {
+            "type": "string",
+            "valueString": "Harbor & Pine Cafe",
+            "content": "Harbor & Pine Cafe",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "InvoiceId": {
+            "type": "string",
+            "valueString": "CN-88213",
+            "content": "CN-88213",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "InvoiceDate": {
+            "type": "date",
+            "valueDate": "2026-10-01",
+            "content": "Oct 1, 2026",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "SubTotal": {
+            "type": "currency",
+            "valueCurrency": {
+              "amount": 60,
+              "currencyCode": "USD"
+            },
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "TotalTax": {
+            "type": "currency",
+            "valueCurrency": {
+              "amount": 0,
+              "currencyCode": "USD"
+            },
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "InvoiceTotal": {
+            "type": "currency",
+            "valueCurrency": {
+              "amount": 60,
+              "currencyCode": "USD"
+            },
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "Items": {
+            "type": "array",
+            "valueArray": [
+              {
+                "type": "object",
+                "valueObject": {
+                  "Description": {
+                    "type": "string",
+                    "valueString": "Team plan, monthly (per seat)",
+                    "content": "Team plan, monthly (per seat)",
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  },
+                  "Quantity": {
+                    "type": "number",
+                    "valueNumber": 5,
+                    "confidence": 0.95
+                  },
+                  "UnitPrice": {
+                    "type": "currency",
+                    "valueCurrency": {
+                      "amount": 12,
+                      "currencyCode": "USD"
+                    },
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  },
+                  "Amount": {
+                    "type": "currency",
+                    "valueCurrency": {
+                      "amount": 60,
+                      "currencyCode": "USD"
+                    },
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "DueDate": {
+            "type": "date",
+            "valueDate": "2026-10-31",
+            "content": "Oct 31, 2026",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "bluepeak-math-error.pdf": {
+    "apiVersion": "2024-11-30",
+    "modelId": "prebuilt-invoice",
+    "content": "Bluepeak Office Supply Corp.\nUnit 4B, Ortigas Center, Pasig City, Metro Manila\nVAT Reg. TIN: 123-456-789-000\nSALES INVOICE\nInvoice No. INV-2026-1043\nDate: October 12, 2026\nDue: November 11, 2026\nBill to\nHarbor & Pine Cafe\nDescription Qty Unit price Amount\nWhiteboard marker, box of 12 3 220.00 660.00\nClear folder, pack of 50 4 210.00 840.00\nVATable Sales PHP 1,500.00\nVAT Amount PHP 180.00\nTOTAL AMOUNT DUE PHP 1,860.00\nSample document generated for LedgerLens. All names and numbers are fictitious.",
+    "pages": [
+      {
+        "pageNumber": 1
+      }
+    ],
+    "documents": [
+      {
+        "docType": "invoice",
+        "fields": {
+          "VendorName": {
+            "type": "string",
+            "valueString": "Bluepeak Office Supply Corp.",
+            "content": "Bluepeak Office Supply Corp.",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "CustomerName": {
+            "type": "string",
+            "valueString": "Harbor & Pine Cafe",
+            "content": "Harbor & Pine Cafe",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "InvoiceId": {
+            "type": "string",
+            "valueString": "INV-2026-1043",
+            "content": "INV-2026-1043",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "InvoiceDate": {
+            "type": "date",
+            "valueDate": "2026-10-12",
+            "content": "October 12, 2026",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "SubTotal": {
+            "type": "currency",
+            "valueCurrency": {
+              "amount": 1500,
+              "currencyCode": "PHP"
+            },
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "TotalTax": {
+            "type": "currency",
+            "valueCurrency": {
+              "amount": 180,
+              "currencyCode": "PHP"
+            },
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "InvoiceTotal": {
+            "type": "currency",
+            "valueCurrency": {
+              "amount": 1860,
+              "currencyCode": "PHP"
+            },
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "Items": {
+            "type": "array",
+            "valueArray": [
+              {
+                "type": "object",
+                "valueObject": {
+                  "Description": {
+                    "type": "string",
+                    "valueString": "Whiteboard marker, box of 12",
+                    "content": "Whiteboard marker, box of 12",
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  },
+                  "Quantity": {
+                    "type": "number",
+                    "valueNumber": 3,
+                    "confidence": 0.95
+                  },
+                  "UnitPrice": {
+                    "type": "currency",
+                    "valueCurrency": {
+                      "amount": 220,
+                      "currencyCode": "PHP"
+                    },
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  },
+                  "Amount": {
+                    "type": "currency",
+                    "valueCurrency": {
+                      "amount": 660,
+                      "currencyCode": "PHP"
+                    },
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "valueObject": {
+                  "Description": {
+                    "type": "string",
+                    "valueString": "Clear folder, pack of 50",
+                    "content": "Clear folder, pack of 50",
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  },
+                  "Quantity": {
+                    "type": "number",
+                    "valueNumber": 4,
+                    "confidence": 0.95
+                  },
+                  "UnitPrice": {
+                    "type": "currency",
+                    "valueCurrency": {
+                      "amount": 210,
+                      "currencyCode": "PHP"
+                    },
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  },
+                  "Amount": {
+                    "type": "currency",
+                    "valueCurrency": {
+                      "amount": 840,
+                      "currencyCode": "PHP"
+                    },
+                    "confidence": 0.96,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "VendorTaxId": {
+            "type": "string",
+            "valueString": "123-456-789-000",
+            "content": "123-456-789-000",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "DueDate": {
+            "type": "date",
+            "valueDate": "2026-11-11",
+            "content": "November 11, 2026",
+            "confidence": 0.96,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

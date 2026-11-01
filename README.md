@@ -1,36 +1,149 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LedgerLens
 
-## Getting Started
+[![CI](https://github.com/Zebbb01/ledgerlens/actions/workflows/ci.yml/badge.svg)](https://github.com/Zebbb01/ledgerlens/actions/workflows/ci.yml)
 
-First, run the development server:
+Invoices and receipts in, checked numbers out. LedgerLens reads a bill with **Azure AI Document
+Intelligence**, then checks it in code: totals, line items, 12% Philippine VAT, dates, the vendor's TIN
+and duplicates. A bill that fails a check cannot be approved until a person fixes it. Approved bills
+export as CSV or JSON for the books.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+It runs on Azure entirely within free tiers: a Next.js web app and a queue worker on **Azure Container
+Apps**, files in **Blob Storage**, work handed over through **Queue Storage**, data in **Cosmos DB for
+MongoDB**, all provisioned with **Terraform** and deployed by **GitHub Actions** over OpenID Connect.
+
+![The review screen for an invoice whose printed total does not add up: two checks failed, approval blocked](docs/screenshots/review-blocked.png)
+
+## What it does
+
+- **Reads** PDF, PNG and JPEG invoices and receipts with the `prebuilt-invoice` model, and the Philippine
+  VAT breakdown (VATable, VAT-exempt, zero-rated sales, VAT amount) from the page text.
+- **Checks** every result in code and **fails closed**: a failed check blocks approval, a low-confidence
+  field asks for a look. Nothing the model reads is trusted unchecked.
+- **Lets a person correct** any field. Corrections are kept in an edit history and the checks run again.
+- **Spends the free allowance carefully**: an identical file reuses its earlier analysis, so the samples
+  cost nothing after their first run, and monthly and daily caps keep usage under the free tier.
+- **Suggests an expense category** from a fixed chart of accounts with an LLM (optional, GitHub Models'
+  free tier). Only the vendor name and item descriptions go into the prompt.
+- **Keeps each browser's documents private** through a per-browser workspace; every query is scoped to it.
+
+## How it works
+
+```mermaid
+flowchart LR
+  B[Browser] -->|upload or sample| W[Web app<br/>Next.js on Container Apps]
+  W -->|file| S[(Blob Storage)]
+  W -->|document ID| Q[[Queue Storage]]
+  Q -->|KEDA starts a job| J[Worker<br/>Container Apps job]
+  S --> J
+  J -->|analyze| D[AI Document Intelligence<br/>prebuilt-invoice, free tier]
+  J -->|checks in code| C[(Cosmos DB for MongoDB<br/>free tier)]
+  W <-->|review, edit, approve| C
+  J -.->|optional| M[GitHub Models<br/>category]
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. The web app sniffs the file type from its first bytes, stores the file in Blob Storage, saves a
+   `queued` record and puts the document ID on the queue.
+2. KEDA sees the message and starts a Container Apps job. The worker drains the queue and exits, so it
+   costs nothing while idle. Locally the same worker runs with `--watch`.
+3. The worker looks for an earlier analysis of the same file (SHA-256). If there is none, it reserves
+   pages from the monthly allowance and calls Document Intelligence, retrying when the free tier
+   throttles (one request per second).
+4. Code normalizes the result (money in integer cents from here on), runs the checks, and saves the
+   invoice with its checks. The browser polls until the record leaves the queue.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## The checks
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Check | Rule | When it does not hold |
+| --- | --- | --- |
+| Required fields | Vendor, invoice date and total are present | Fails |
+| Totals add up | Subtotal − discount + tax = total, within one centavo | Fails |
+| Line items add up | Lines sum to the subtotal, or to the total for VAT-inclusive prices | Asks for a look |
+| VAT is 12% | VAT = 12% of VATable sales, within two centavos | Fails |
+| VAT breakdown adds up | VATable + exempt + zero-rated + VAT = total | Fails |
+| Dates make sense | Invoice date not in the future; due date not before it | Fails |
+| Vendor TIN format | Peso invoices show a TIN in the BIR format 000-000-000-000 | Fails; a missing TIN asks for a look |
+| Not a duplicate | No other document in the workspace has this vendor and invoice number | Fails |
+| Read confidence | Key fields read with at least 80% confidence | Asks for a look |
 
-## Learn More
+"Today" for the date check is taken on UTC+14, so no time zone sees a valid invoice dated today as being
+in the future.
 
-To learn more about Next.js, take a look at the following resources:
+## Staying free
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Service | Free allowance | How LedgerLens stays inside it |
+| --- | --- | --- |
+| Container Apps (consumption) | 180,000 vCPU-seconds, 360,000 GiB-seconds and 2 million requests a month | Web app scales to zero, at most one 0.25 vCPU replica; the worker job runs only while the queue has messages |
+| AI Document Intelligence F0 | 500 pages a month; first 2 pages and 4 MB per file; 1 request per second | 450-page monthly cap, 2 pages reserved per analysis, analyses reused by file hash, daily upload limits, 429 retries |
+| Cosmos DB for MongoDB | Free tier: first 1000 RU/s and 25 GB, for the life of the account | One database sharing 400 RU/s; documents expire after 7 days |
+| Blob and Queue Storage | 5 GB for 12 months on a free account | Files deleted after 7 days by a lifecycle rule; a few cents a year at most after that |
+| Log Analytics | 5 GB of ingestion a month | Daily cap of 0.15 GB |
+| GitHub Actions and Container Registry | Free for public repositories | |
+| GitHub Models (optional) | Free, rate-limited | Off unless a token is set |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Tech stack
 
-## Deploy on Vercel
+| Part | Choice |
+| --- | --- |
+| Web app | Next.js 16 (App Router, route handlers), React 19, TypeScript, Tailwind CSS 4 |
+| Worker | Plain Node.js running the same TypeScript files (native type stripping), same container image |
+| Document AI | Azure AI Document Intelligence REST API, `prebuilt-invoice`, Microsoft Entra ID auth |
+| Data | MongoDB driver against Cosmos DB for MongoDB; each collection sharded on the field its queries use |
+| Files and queue | Azure Blob Storage and Queue Storage, managed identity (Azurite locally) |
+| Infrastructure | Terraform (azurerm 4), Azure Container Apps with a KEDA `azure-queue` event-driven job |
+| CI/CD | GitHub Actions: lint, typecheck, unit and end-to-end tests, Terraform validate, image build; deploy to GHCR and Container Apps over OpenID Connect |
+| Tests | Vitest with an in-memory MongoDB, Playwright end to end against Azurite and a mock Document Intelligence server |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Run it locally
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+You need Node.js 22.16 or later. No Azure account is needed: Azurite stands in for Blob and Queue
+Storage, an in-memory MongoDB for Cosmos DB, and a mock server for Document Intelligence (it answers
+for the sample files).
+
+```bash
+npm install
+cp .env.example .env.local
+npx azurite --silent --inMemoryPersistence --skipApiVersionCheck --loose   # terminal 1
+npm run services                                                          # terminal 2: MongoDB, mock DI, worker
+npm run dev                                                               # terminal 3: http://localhost:3200
+```
+
+To read your own documents locally, point `DI_ENDPOINT` at a real Document Intelligence resource and sign
+in with `az login` (or set `DI_KEY` for a resource that allows keys).
+
+## Tests
+
+```bash
+npm test           # unit tests: extraction, checks, edits, quota, Document Intelligence client, pipeline
+npm run test:e2e   # Playwright: starts Azurite, MongoDB, the mock service, the worker and the app
+```
+
+The end-to-end tests cover a passing VAT invoice through approval and CSV export, a wrong total that
+blocks approval until it is corrected, duplicate detection with analysis reuse, uploads, a refused file
+type, a document the service cannot read, and that one browser cannot open another's documents.
+
+**Accuracy.** The four sample documents are generated by `npm run samples` (all names are fictitious),
+with answer keys in `samples/answers.json`. `npm run eval` scores a real Document Intelligence resource
+against them field by field. Against the mock service the score only proves the wiring, so no accuracy
+figure is claimed here until it has been run against Azure.
+
+## Security
+
+- **No keys in configuration.** The app and worker use a managed identity for Storage and Document
+  Intelligence; key access to Document Intelligence is switched off. GitHub Actions deploys through
+  OpenID Connect, with no stored secret.
+- **Workspace isolation.** Every database query carries the workspace ID from an HttpOnly cookie, and the
+  end-to-end suite checks that another browser gets "Document not found".
+- **Untrusted input.** File types come from magic bytes, not names. Edits are validated field by field on
+  the server. CSV cells that start like a formula are prefixed so a spreadsheet will not run them.
+- **Privacy.** Raw IP addresses are never stored (only a salted hash for the daily limit), and files and
+  records expire after 7 days.
+
+## Limits and next steps
+
+- The free tier reads only the first two pages of a file. Receipts go through the invoice model; the
+  `prebuilt-receipt` model would read thermal receipts better.
+- There are no accounts yet: workspaces are per browser. Sign-in with roles, Stripe test-mode billing per
+  page, and pushing approved bills to a QuickBooks or Xero sandbox are the next steps.
+- Logs are structured JSON in Log Analytics; Application Insights tracing is not wired up yet.
+
+Deployment steps are in [DEPLOYMENT.md](DEPLOYMENT.md).

@@ -140,6 +140,14 @@ against them field by field. Against the live free-tier resource (`prebuilt-invo
 
 Four clean, generated documents are a smoke test, not a benchmark.
 
+**A real invoice.** An SPX (Shopee logistics) shipping invoice from a real order, kept out of the
+repository because it carries a name and an address, went through the same live resource. Before:
+**8 of 11 fields**. The model took the "SPX EXPRESS" logo as the vendor, and the VAT checks never ran
+because Shopee labels the breakdown "PH VAT STD sales" and plain "VAT". LedgerLens now prefers the
+registered business name the model also returns ("SPX Philippines Inc.") and reads those labels. After:
+**11 of 11**, every check passes, and only the invoice number, read at 54% confidence, is flagged for a
+look.
+
 ## Security
 
 - **No keys in configuration.** The app and worker use a managed identity for Storage and Document

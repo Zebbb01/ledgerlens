@@ -83,7 +83,7 @@ export function Workbench() {
     void add({ headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sample: file }) });
 
   return (
-    <div className="mt-8 grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+    <div id="add" className="mt-14 grid scroll-mt-6 items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <section aria-labelledby="add-heading" className="rounded-xl border border-line bg-surface p-5">
         <h2 id="add-heading" className="font-semibold">
           Add a document
@@ -128,17 +128,23 @@ export function Workbench() {
         )}
 
         <h3 className="mt-6 text-sm font-semibold">Try a sample</h3>
-        <ul className="mt-2 grid gap-2">
+        <ul className="mt-2 grid grid-cols-2 gap-3">
           {SAMPLES.map((s) => (
             <li key={s.file}>
               <button
                 type="button"
                 onClick={() => runSample(s.file)}
                 disabled={busy}
-                className={`w-full rounded-lg border border-line px-3 py-2.5 text-left hover:border-brand disabled:cursor-wait disabled:opacity-60 ${focusRing}`}
+                className={`group flex h-full w-full flex-col overflow-hidden rounded-lg border border-line text-left hover:border-brand disabled:cursor-wait disabled:opacity-60 ${focusRing}`}
               >
-                <span className="block text-sm font-medium">{s.title}</span>
-                <span className="block text-sm text-muted">{s.note}</span>
+                {/* eslint-disable-next-line @next/next/no-img-element -- a static SVG drawn from the sample PDF */}
+                <img
+                  src={`/samples/${s.file.replace(/\.pdf$/, ".svg")}`}
+                  alt=""
+                  className="aspect-3/2 w-full border-b border-line bg-white object-cover object-top"
+                />
+                <span className="block px-3 pt-2.5 text-sm font-medium group-hover:text-brand">{s.title}</span>
+                <span className="block px-3 pb-3 text-xs leading-relaxed text-muted">{s.note}</span>
               </button>
             </li>
           ))}
@@ -161,10 +167,25 @@ export function Workbench() {
           ) : rows === null ? (
             <p className="text-sm text-muted">Loading documents…</p>
           ) : rows.length === 0 ? (
-            <p className="text-sm text-muted">No documents yet. Run a sample or upload a file.</p>
+            <div className="flex flex-col items-center rounded-lg border border-dashed border-line px-6 py-12 text-center">
+              <svg viewBox="0 0 24 24" width="36" height="36" aria-hidden="true" className="text-muted">
+                <path
+                  d="M6 3h8l4 4v14H6zM14 3v4h4M9 12h6M9 16h4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <p className="mt-3 text-sm font-medium">No documents yet.</p>
+              <p className="mt-1 max-w-xs text-sm text-muted">
+                Run a sample or upload a bill. Each one shows up here with its checks.
+              </p>
+            </div>
           ) : (
-            <div className="-mx-5 overflow-x-auto px-5">
-              <table className="w-full min-w-136 text-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-136 text-sm sm:min-w-0">
                 <thead>
                   <tr className="border-b border-line text-left text-xs text-muted">
                     <th className="py-2 pr-3 font-medium">File</th>
@@ -177,12 +198,20 @@ export function Workbench() {
                 <tbody>
                   {rows.map((r) => (
                     <tr key={r.id} className="border-b border-line last:border-0">
-                      <td className="max-w-48 truncate py-2.5 pr-3">
-                        <Link href={`/documents/${r.id}`} className={`rounded font-medium text-brand hover:underline ${focusRing}`}>
+                      <td className="py-2.5 pr-3">
+                        <Link
+                          href={`/documents/${r.id}`}
+                          title={r.fileName}
+                          className={`block max-w-40 truncate rounded font-medium text-brand hover:underline ${focusRing}`}
+                        >
                           {r.fileName}
                         </Link>
                       </td>
-                      <td className="max-w-48 truncate py-2.5 pr-3">{r.vendor ?? "—"}</td>
+                      <td className="py-2.5 pr-3">
+                        <span className="block max-w-40 truncate" title={r.vendor ?? undefined}>
+                          {r.vendor ?? "—"}
+                        </span>
+                      </td>
                       <td className="whitespace-nowrap py-2.5 pr-3 text-right tabular-nums">
                         {r.total === null ? "—" : `${r.currency ?? ""} ${formatMoney(r.total)}`.trim()}
                       </td>

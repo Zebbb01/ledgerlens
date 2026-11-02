@@ -136,9 +136,15 @@ async function render(spec: Spec) {
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const text: string[] = []; // reading order, as Document Intelligence returns it
+  // The same drawing as SVG, for the sample thumbnails the app shows. SVG's y
+  // axis points down, PDF's up.
+  const svg: string[] = [];
+  const esc = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;");
 
   const draw = (p: PDFPage, s: string, x: number, y: number, size = 10, font: PDFFont = regular, right = false) => {
     p.drawText(s, { x: right ? x - font.widthOfTextAtSize(s, size) : x, y, size, font, color: rgb(0.1, 0.12, 0.16) });
+    const weight = font === bold ? ' font-weight="700"' : "";
+    svg.push(`<text x="${x}" y="${842 - y}" font-size="${size}"${weight}${right ? ' text-anchor="end"' : ""}>${esc(s)}</text>`);
   };
   const say = (s: string) => text.push(s);
 
@@ -162,6 +168,7 @@ async function render(spec: Spec) {
   say(spec.customer);
 
   page.drawRectangle({ x: 45, y: 628, width: 505, height: 20, color: rgb(0.93, 0.95, 0.97) });
+  svg.push(`<rect x="45" y="${842 - 648}" width="505" height="20" fill="#edf2f7"/>`);
   const head: [string, number, boolean][] = [["Description", 52, false], ["Qty", 345, true], ["Unit price", 445, true], ["Amount", 543, true]];
   head.forEach(([h, x, r]) => draw(page, h, x, 634, 9, bold, r));
   say(head.map(([h]) => h).join(" "));
@@ -190,7 +197,16 @@ async function render(spec: Spec) {
   draw(page, footer, 50, 60, 8);
   say(footer);
 
-  return { bytes: await pdf.save({ useObjectStreams: false }), content: text.join("\n") };
+  const thumbnail = [
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 595 842">',
+    '<rect width="595" height="842" fill="#fff"/>',
+    '<g font-family="Helvetica, Arial, sans-serif" fill="#1a1f29">',
+    // The background rect has to come before the header text it sits under.
+    ...svg.filter((e) => e.startsWith("<rect")),
+    ...svg.filter((e) => !e.startsWith("<rect")),
+    "</g></svg>",
+  ].join("");
+  return { bytes: await pdf.save({ useObjectStreams: false }), content: text.join("\n"), thumbnail };
 }
 
 // What Document Intelligence (prebuilt-invoice) would return, in its shape.
@@ -233,8 +249,9 @@ function diResult(spec: Spec, content: string) {
 const mock: Record<string, unknown> = {};
 const answers: Record<string, unknown> = {};
 for (const spec of SPECS) {
-  const { bytes, content } = await render(spec);
+  const { bytes, content, thumbnail } = await render(spec);
   await writeFile(`samples/${spec.file}`, bytes);
+  await writeFile(`public/samples/${spec.file.replace(/\.pdf$/, ".svg")}`, thumbnail);
   mock[spec.file] = diResult(spec, content);
   answers[spec.file] = {
     vendorName: spec.vendor,

@@ -8,7 +8,9 @@ import { parseMoney } from "@/lib/edits.ts";
 import { toCsv } from "@/lib/exports.ts";
 import type { Field, Invoice } from "@/lib/extract.ts";
 import { CATEGORIES } from "@/lib/llm.ts";
+import { fieldToFix, flaggedFields, summarize, type FieldKey } from "@/lib/review.ts";
 import { canApprove, formatMoney, type Check } from "@/lib/validate.ts";
+import type { ReactNode } from "react";
 import { StatusPill, buttonClass, focusRing } from "../../ui";
 
 type Doc = {
@@ -77,6 +79,29 @@ const CHECK_LOOK: Record<Check["status"], { word: string; mark: string; tone: st
   warn: { word: "Check", mark: "!", tone: "text-warn" },
   skip: { word: "Skipped", mark: "–", tone: "text-skip" },
 };
+
+const LABEL = Object.fromEntries(GROUPS.flatMap((g) => g.fields.map(([key, label]) => [key, label]))) as Record<string, string>;
+
+const FLAG_RING = { fail: "border-fail ring-1 ring-fail", warn: "border-warn ring-1 ring-warn", none: "" };
+
+function CheckItem({ check, children }: { check: Check; children?: ReactNode }) {
+  const look = CHECK_LOOK[check.status];
+  return (
+    <li className="flex gap-3 text-sm">
+      <span aria-hidden="true" className={`w-4 shrink-0 text-center font-bold ${look.tone}`}>
+        {look.mark}
+      </span>
+      <div className="min-w-0">
+        <p>
+          <span className="font-medium">{CHECK_TITLE[check.id] ?? check.id}</span>{" "}
+          <span className={`text-xs font-medium ${look.tone}`}>{look.word}</span>
+        </p>
+        <p className="text-muted">{check.message}</p>
+        {children}
+      </div>
+    </li>
+  );
+}
 
 const show = (f: Field<unknown>, kind: Kind) =>
   f.value === null ? "" : kind === "money" ? formatMoney(f.value as number) : String(f.value);
@@ -218,6 +243,11 @@ export function DocumentView() {
   const seconds = Math.max(0, Math.round((now - new Date(doc.createdAt).getTime()) / 1000));
   const blocked = !canApprove(doc.checks);
   const base = doc.fileName.replace(/\.[^.]+$/, "");
+  // What needs a person comes first; passed and skipped checks fold away.
+  const summary = summarize(doc.checks);
+  const attention = doc.checks.filter((c) => c.status === "fail" || c.status === "warn");
+  const settled = doc.checks.filter((c) => c.status === "pass" || c.status === "skip");
+  const flags = inv && editable ? flaggedFields(doc.checks, inv) : {};
 
   return (
     <div>
@@ -260,28 +290,56 @@ export function DocumentView() {
         {inv && (
           <div className="space-y-6">
             <section aria-labelledby="checks-heading" className="rounded-xl border border-line bg-surface p-5">
-              <h2 id="checks-heading" className="font-semibold">
-                Checks
-              </h2>
-              <ul className="mt-3 space-y-2.5">
-                {doc.checks.map((c) => {
-                  const look = CHECK_LOOK[c.status];
-                  return (
-                    <li key={c.id} className="flex gap-3 text-sm">
-                      <span aria-hidden="true" className={`w-4 shrink-0 text-center font-bold ${look.tone}`}>
-                        {look.mark}
-                      </span>
-                      <div className="min-w-0">
-                        <p>
-                          <span className="font-medium">{CHECK_TITLE[c.id] ?? c.id}</span>{" "}
-                          <span className={`text-xs font-medium ${look.tone}`}>{look.word}</span>
-                        </p>
-                        <p className="text-muted">{c.message}</p>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 id="checks-heading" className="font-semibold">
+                  Checks
+                </h2>
+                <p className="flex flex-wrap gap-1.5 text-xs font-medium">
+                  {summary.failed > 0 && (
+                    <span className="rounded-full border border-fail/50 px-2 py-0.5 text-fail">{summary.failed} failed</span>
+                  )}
+                  {summary.warned > 0 && (
+                    <span className="rounded-full border border-warn/50 px-2 py-0.5 text-warn">{summary.warned} to check</span>
+                  )}
+                  <span className="rounded-full border border-pass/50 px-2 py-0.5 text-pass">{summary.passed} passed</span>
+                </p>
+              </div>
+              <p className="mt-1 text-sm text-muted">
+                {doc.status === "approved" ? "Approved. Download the bill below." : summary.next}
+              </p>
+
+              {attention.length > 0 && (
+                <ul className="mt-4 space-y-3">
+                  {attention.map((c) => {
+                    const target = editable ? fieldToFix(c, inv) : undefined;
+                    return (
+                      <CheckItem key={c.id} check={c}>
+                        {target && (
+                          <button
+                            type="button"
+                            onClick={() => document.getElementById(target)?.focus()}
+                            className={`mt-1 rounded text-xs font-medium text-brand hover:underline ${focusRing}`}
+                          >
+                            Go to {LABEL[target]}
+                          </button>
+                        )}
+                      </CheckItem>
+                    );
+                  })}
+                </ul>
+              )}
+
+              <details className="mt-4">
+                <summary className={`cursor-pointer rounded text-sm font-medium text-brand ${focusRing}`}>
+                  Show {summary.passed} passed{summary.skipped ? ` and ${summary.skipped} skipped` : ""}{" "}
+                  {summary.passed + summary.skipped === 1 ? "check" : "checks"}
+                </summary>
+                <ul className="mt-3 space-y-2.5">
+                  {settled.map((c) => (
+                    <CheckItem key={c.id} check={c} />
+                  ))}
+                </ul>
+              </details>
             </section>
 
             <form onSubmit={onSubmit} className="space-y-6 rounded-xl border border-line bg-surface p-5">
@@ -318,9 +376,10 @@ export function DocumentView() {
                             inputMode={kind === "money" ? "decimal" : undefined}
                             readOnly={!editable}
                             aria-describedby={chip ? `${key}-note` : undefined}
+                            aria-invalid={flags[key as FieldKey] === "fail" || undefined}
                             value={form[key] ?? ""}
                             onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                            className={`mt-1 ${inputClass} ${kind === "money" ? "text-right tabular-nums" : ""}`}
+                            className={`mt-1 ${inputClass} ${kind === "money" ? "text-right tabular-nums" : ""} ${FLAG_RING[flags[key as FieldKey] ?? "none"]}`}
                           />
                         </div>
                       );

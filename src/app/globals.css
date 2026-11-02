@@ -19,8 +19,14 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Lets the browser draw scrollbars, date pickers and selects to match the theme. */
+:root {
+  color-scheme: light;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
+    color-scheme: dark;
     --color-canvas: #0b0d12;
     --color-surface: #13161d;
     --color-ink: #e5e7eb;
@@ -34,6 +40,13 @@
     --color-warn: #fbbf24;
     --color-skip: #9ca3af;
   }
+}
+
+/* A faint dot grid behind the hero visual. */
+.dot-grid {
+  background-image: radial-gradient(color-mix(in oklab, var(--color-ink) 16%, transparent) 1px, transparent 1px);
+  background-size: 18px 18px;
+  mask-image: radial-gradient(closest-side, black, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -16,10 +16,10 @@ variable "image" {
   default     = "ghcr.io/zebbb01/ledgerlens:latest"
 }
 
-variable "github_repo" {
-  description = "owner/name of the GitHub repository allowed to deploy through OpenID Connect."
+variable "github_oidc_subject_prefix" {
+  description = "Start of the subject GitHub puts in the repository's OpenID Connect tokens. New repositories use immutable IDs (repo:OWNER@OWNER_ID/REPO@REPO_ID); print yours with: gh api repos/OWNER/REPO/actions/oidc/customization/sub"
   type        = string
-  default     = "Zebbb01/ledgerlens"
+  default     = "repo:Zebbb01@179115543/ledgerlens@1442479905"
 }
 
 variable "monthly_page_cap" {

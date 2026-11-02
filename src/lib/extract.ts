@@ -74,15 +74,24 @@ function printed(content: string, label: string): Field<number> {
   return { value: toCents(Number(m[1].replaceAll(",", ""))), confidence: null, page: null };
 }
 
+// The model often misses a Philippine TIN printed as "VAT Reg. TIN: ...". The
+// first TIN in reading order is the seller's, printed under its name; a
+// customer's TIN, if any, comes later.
+function printedTin(content: string): Field<string> {
+  const m = /\bTIN\b[^\d\n]{0,12}(\d{3}-?\d{3}-?\d{3}(?:-?\d{3,5})?)/i.exec(content);
+  return m ? { value: m[1], confidence: null, page: null } : empty();
+}
+
 export function normalize(result: AnalyzeResult): Invoice {
   const f = (result.documents[0]?.fields ?? {}) as Record<string, DiField>;
   const content = result.content ?? "";
   const code = [f.InvoiceTotal, f.SubTotal, f.TotalTax].find((x) => x?.valueCurrency?.currencyCode)?.valueCurrency
     ?.currencyCode;
+  const tin = field(f.VendorTaxId, text);
 
   return {
     vendorName: field(f.VendorName, text),
-    vendorTaxId: field(f.VendorTaxId, text),
+    vendorTaxId: tin.value !== null ? tin : printedTin(content),
     customerName: field(f.CustomerName, text),
     invoiceId: field(f.InvoiceId, text),
     invoiceDate: field(f.InvoiceDate, day),

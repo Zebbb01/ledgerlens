@@ -107,6 +107,20 @@ describe("normalize", () => {
     expect(inv.vatAmount.value).toBe(12000);
   });
 
+  it("falls back to the seller's TIN printed on the page when the model finds none", () => {
+    const content = "Bluepeak Office Supply Corp.\nVAT Reg. TIN: 123-456-789-000\nBill to\nCustomer TIN 987-654-321-000";
+
+    const inv = normalize(result({ VendorName: str("Bluepeak Office Supply Corp.") }, content));
+
+    expect(inv.vendorTaxId).toEqual({ value: "123-456-789-000", confidence: null, page: null });
+  });
+
+  it("keeps the TIN the model read over the page text", () => {
+    const inv = normalize(result({ VendorTaxId: str("111-222-333-000") }, "TIN: 123-456-789-000"));
+
+    expect(inv.vendorTaxId.value).toBe("111-222-333-000");
+  });
+
   it("reads '12% VAT' as the VAT amount", () => {
     const inv = normalize(result({}, "VATable Sales: P892.86\n12% VAT: P107.14"));
 

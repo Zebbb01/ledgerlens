@@ -26,8 +26,12 @@ fails or that service is billed.
    `infra/variables.tf`).
 2. Merge a release into `main`. The **Deploy** workflow builds the image and pushes it to
    `ghcr.io/zebbb01/ledgerlens`. Its Azure step is skipped until step 3 is done.
-3. Make the image public, so Container Apps can pull it without credentials: GitHub → your profile →
-   **Packages** → `ledgerlens` → **Package settings** → **Change visibility** → **Public**.
+3. Container Apps pulls the image without credentials, so it must be public. An image published by a
+   public repository's workflow normally is; if GitHub → your profile → **Packages** → `ledgerlens` shows
+   **Private**, open **Package settings** → **Change visibility** → **Public**.
+
+If the Deploy workflow did not start on the push (brand-new repositories sometimes miss their first
+events), run it from **Actions** → **Deploy** → **Run workflow**.
 
 ## 2. Create the Azure resources
 
@@ -40,11 +44,15 @@ the same commands on your own machine after installing the Azure CLI and Terrafo
 git clone https://github.com/Zebbb01/ledgerlens.git
 cd ledgerlens/infra
 terraform init
-terraform apply
+terraform apply -var "alert_email=you@example.com"
 ```
 
+`alert_email` adds a cost alert: a monthly budget of 1 (in your billing currency) that emails you at the
+first cent of actual cost, so anything that leaves the free tiers is noticed at once. Leave it out to skip
+the alert.
+
 Optional: turn on category suggestions with a GitHub token that has the `models:read` permission:
-`terraform apply -var "llm_api_key=github_pat_..."`.
+`-var "llm_api_key=github_pat_..."`.
 
 Keep the Terraform state (`terraform.tfstate`): it is how you update or remove the resources later.
 

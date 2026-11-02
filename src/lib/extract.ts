@@ -78,13 +78,26 @@ function printed(content: string, label: string): Field<number> {
 // A registered business name ends like this; logo text read as the vendor usually doesn't.
 const ENTITY = /\b(inc|corp|corporation|co|company|ltd|limited|llc|opc|plc|pte|pty)\.?$/i;
 
-// On real invoices the model sometimes takes the logo ("SPX EXPRESS") as the vendor and
-// puts the registered name ("SPX Philippines Inc.") in VendorAddressRecipient.
-function vendor(f: Record<string, DiField>): Field<string> {
-  const name = field(f.VendorName, text);
-  const recipient = field(f.VendorAddressRecipient, text);
+// On real invoices the model sometimes takes the logo ("SPX EXPRESS") as the vendor.
+// The registered name is then often in VendorAddressRecipient, and a Philippine
+// invoice also prints it as the "Business Style" beside the seller's TIN.
+function vendor(f: Record<string, DiField>, content: string): Field<string> {
   const registered = (x: Field<string>) => x.value !== null && ENTITY.test(x.value);
-  return registered(recipient) && !registered(name) ? recipient : name;
+  const name = field(f.VendorName, text);
+  if (registered(name)) return name;
+  const recipient = field(f.VendorAddressRecipient, text);
+  if (registered(recipient)) return recipient;
+  const style = /Business Style:[ \t]*([^\n]+)/i.exec(content)?.[1].trim() ?? null;
+  const printed = { value: style, confidence: null, page: null };
+  return registered(printed) ? printed : name;
+}
+
+// A Philippine invoice numbers itself as a BIR series ("Series Number ISISF…"),
+// which the model can miss. The first one is the invoice's; the range in the
+// footer comes later.
+function printedNumber(content: string): Field<string> {
+  const m = /(?:Series Number|Invoice (?:No\.?|Number)|SI No\.?)[\s:#]*([A-Z0-9][A-Z0-9-]{3,})/i.exec(content);
+  return m ? { value: m[1], confidence: null, page: null } : empty();
 }
 
 // The model often misses a Philippine TIN printed as "VAT Reg. TIN: ...". The
@@ -101,12 +114,13 @@ export function normalize(result: AnalyzeResult): Invoice {
   const code = [f.InvoiceTotal, f.SubTotal, f.TotalTax].find((x) => x?.valueCurrency?.currencyCode)?.valueCurrency
     ?.currencyCode;
   const tin = field(f.VendorTaxId, text);
+  const id = field(f.InvoiceId, text);
 
   return {
-    vendorName: vendor(f),
+    vendorName: vendor(f, content),
     vendorTaxId: tin.value !== null ? tin : printedTin(content),
     customerName: field(f.CustomerName, text),
-    invoiceId: field(f.InvoiceId, text),
+    invoiceId: id.value !== null ? id : printedNumber(content),
     invoiceDate: field(f.InvoiceDate, day),
     dueDate: field(f.DueDate, day),
     currency: code ?? (/₱|\bPHP\b/.test(content) ? "PHP" : null),

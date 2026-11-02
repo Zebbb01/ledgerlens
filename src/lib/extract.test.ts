@@ -175,6 +175,34 @@ describe("normalize", () => {
     expect(inv.vendorName.value).toBe("Bluepeak Office Supply Corp.");
   });
 
+  it("falls back to the registered name printed as the Business Style when the model reads the logo", () => {
+    const content = "Parcelwave Logistics Inc.\nVAT REG. TIN: 241-118-730-00000\nBusiness Style: Parcelwave Logistics Inc.";
+
+    const inv = normalize(result({ VendorName: str("PARCELWAVE EXPRESS") }, content));
+
+    expect(inv.vendorName).toEqual({ value: "Parcelwave Logistics Inc.", confidence: null, page: null });
+  });
+
+  it("ignores a Business Style that is not a registered name", () => {
+    const inv = normalize(result({ VendorName: str("Cloudnote") }, "Business Style: -"));
+
+    expect(inv.vendorName.value).toBe("Cloudnote");
+  });
+
+  it("reads the invoice number printed as the Series Number when the model finds none", () => {
+    const content = "Series Number\nPWISF000731204556\nInvoice (Logistics)\nSeries Number: PWISF000000000001-PWISF999999999999";
+
+    const inv = normalize(result({}, content));
+
+    expect(inv.invoiceId).toEqual({ value: "PWISF000731204556", confidence: null, page: null });
+  });
+
+  it("keeps the invoice number the model read over the page text", () => {
+    const inv = normalize(result({ InvoiceId: str("INV-2026-1042") }, "Series Number\nPWISF000731204556"));
+
+    expect(inv.invoiceId.value).toBe("INV-2026-1042");
+  });
+
   it("reads '12% VAT' as the VAT amount", () => {
     const inv = normalize(result({}, "VATable Sales: P892.86\n12% VAT: P107.14"));
 

@@ -50,5 +50,18 @@
     "total": 186000,
     "vatableSales": 150000,
     "vatAmount": 18000
+  },
+  "parcelwave-shipping-invoice.pdf": {
+    "vendorName": "Parcelwave Logistics Inc.",
+    "vendorTaxId": "241-118-730-00000",
+    "invoiceId": "PWISF000731204556",
+    "invoiceDate": "2026-10-14",
+    "dueDate": null,
+    "currency": "PHP",
+    "subtotal": 24911,
+    "tax": 2989,
+    "total": 27900,
+    "vatableSales": 24911,
+    "vatAmount": 2989
   }
 }

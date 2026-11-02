@@ -860,5 +860,192 @@
         }
       }
     ]
+  },
+  "parcelwave-shipping-invoice.pdf": {
+    "apiVersion": "2024-11-30",
+    "modelId": "prebuilt-invoice",
+    "content": "Parcelwave Logistics Inc.\n21F Meridian Tower, Garnet Road, Ortigas Center,\nPasig City, Metro Manila 1605\nVAT REG. TIN: 241-118-730-00000\nBusiness Style: Parcelwave Logistics Inc.\nPARCELWAVE\nEXPRESS\nInvoice (Logistics)\nDate: 14-Oct-2026\nSeries Number\nPWISF000731204556\nOrder ID\n2610143QXLMZB\nBill To\nHarbor & Pine Cafe\nOrder Paid Date\n11-Oct-2026\nTIN\n-\nPayment Method\nOnline Banking\nBusiness Style\n-\nAddress\n12 Mabini Street, Poblacion District,\nDavao City, Davao del Sur, 8000\nDescription\nQuantity\nUnit Price\nAmount\nShipping Fee\n1\n249.11\n249.11\nPH VAT STD sales\n249.11\nSubtotal\n249.11\nPH VAT EXEMPT sales\n-\nDiscount\n0.00\nPH VAT ZERO sales\n-\nVAT\n29.89\nTotal Sales Amount\n249.11\nWithholding Tax\n0.00\nTotal Amount Due (PHP)\n279.00\nAcknowledgment Certificate: AC_123_102026_000999\nSeries Number: PWISF000000000001-PWISF999999999999\n* This is a system-generated document. No signature is required.\nSample document generated for LedgerLens. All names and numbers are fictitious.",
+    "pages": [
+      {
+        "pageNumber": 1
+      }
+    ],
+    "documents": [
+      {
+        "docType": "invoice",
+        "fields": {
+          "VendorName": {
+            "type": "string",
+            "valueString": "PARCELWAVE EXPRESS",
+            "content": "PARCELWAVE EXPRESS",
+            "confidence": 0.91,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "VendorAddressRecipient": {
+            "type": "string",
+            "valueString": "Parcelwave Logistics Inc.",
+            "content": "Parcelwave Logistics Inc.",
+            "confidence": 0.93,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "VendorTaxId": {
+            "type": "string",
+            "valueString": "241-118-730-00000",
+            "content": "241-118-730-00000",
+            "confidence": 0.79,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "CustomerName": {
+            "type": "string",
+            "valueString": "Harbor & Pine Cafe",
+            "content": "Harbor & Pine Cafe",
+            "confidence": 0.9,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "InvoiceId": {
+            "type": "string",
+            "valueString": "PWISF000731204556",
+            "content": "PWISF000731204556",
+            "confidence": 0.54,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "InvoiceDate": {
+            "type": "date",
+            "valueDate": "2026-10-14",
+            "content": "14-Oct-2026",
+            "confidence": 0.95,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "SubTotal": {
+            "type": "currency",
+            "valueCurrency": {
+              "amount": 249.11,
+              "currencyCode": "PHP"
+            },
+            "confidence": 0.95,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "TotalDiscount": {
+            "type": "currency",
+            "valueCurrency": {
+              "amount": 0,
+              "currencyCode": "PHP"
+            },
+            "confidence": 0.75,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "TotalTax": {
+            "type": "currency",
+            "valueCurrency": {
+              "amount": 29.89,
+              "currencyCode": "PHP"
+            },
+            "confidence": 0.94,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "InvoiceTotal": {
+            "type": "currency",
+            "valueCurrency": {
+              "amount": 279,
+              "currencyCode": "PHP"
+            },
+            "confidence": 0.95,
+            "boundingRegions": [
+              {
+                "pageNumber": 1
+              }
+            ]
+          },
+          "Items": {
+            "type": "array",
+            "valueArray": [
+              {
+                "type": "object",
+                "valueObject": {
+                  "Description": {
+                    "type": "string",
+                    "valueString": "Shipping Fee",
+                    "content": "Shipping Fee",
+                    "confidence": 0.95,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  },
+                  "Quantity": {
+                    "type": "number",
+                    "valueNumber": 1,
+                    "confidence": 0.95
+                  },
+                  "UnitPrice": {
+                    "type": "currency",
+                    "valueCurrency": {
+                      "amount": 249.11,
+                      "currencyCode": "PHP"
+                    },
+                    "confidence": 0.95,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  },
+                  "Amount": {
+                    "type": "currency",
+                    "valueCurrency": {
+                      "amount": 249.11,
+                      "currencyCode": "PHP"
+                    },
+                    "confidence": 0.95,
+                    "boundingRegions": [
+                      {
+                        "pageNumber": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
   }
 }

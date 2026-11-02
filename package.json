@@ -1,6 +1,6 @@
 {
   "name": "ledgerlens",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "description": "Reads invoices and receipts with Azure AI Document Intelligence, checks the numbers in code, and hands verified bills to the books.",

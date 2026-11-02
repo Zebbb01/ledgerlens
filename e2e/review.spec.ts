@@ -64,3 +64,17 @@ test("running the same invoice twice reuses the analysis and flags the duplicate
   await page.goto("/");
   await expect(page.getByRole("row").filter({ hasText: "Bluepeak Office Supply Corp." })).toHaveCount(2);
 });
+
+test("the marketplace sample takes the registered name over the logo and checks its VAT", async ({ page }) => {
+  await runSample(page, "Marketplace shipping invoice");
+
+  await expect(status(page)).toHaveText("Needs review", { timeout: 60_000 });
+  await expect(page.getByLabel("Vendor", { exact: true })).toHaveValue("Parcelwave Logistics Inc.");
+  await expect(page.getByLabel("VATable sales", { exact: true })).toHaveValue("249.11");
+  await expect(check(page, "Read confidence")).toContainText("invoice number (54%)");
+  await expect(page.getByRole("button", { name: "Approve" })).toBeEnabled();
+
+  await showPassed(page);
+  await expect(check(page, "VAT is 12%")).toContainText("Passed");
+  await expect(check(page, "VAT breakdown adds up")).toContainText("Passed");
+});

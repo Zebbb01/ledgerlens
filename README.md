@@ -28,8 +28,8 @@ MongoDB**, all provisioned with **Terraform** and deployed by **GitHub Actions**
 - **Lets a person correct** any field. Corrections are kept in an edit history and the checks run again.
 - **Spends the free allowance carefully**: an identical file reuses its earlier analysis, so the samples
   cost nothing after their first run, and monthly and daily caps keep usage under the free tier.
-- **Suggests an expense category** from a fixed chart of accounts with an LLM (optional, GitHub Models'
-  free tier). Only the vendor name and item descriptions go into the prompt.
+- **Suggests an expense category** from a fixed chart of accounts with an LLM (optional, the Gemini
+  API's free tier). Only the vendor name and item descriptions go into the prompt.
 - **Keeps each browser's documents private** through a per-browser workspace; every query is scoped to it.
 
 ## How it works
@@ -44,7 +44,7 @@ flowchart LR
   J -->|analyze| D[AI Document Intelligence<br/>prebuilt-invoice, free tier]
   J -->|checks in code| C[(Cosmos DB for MongoDB<br/>free tier)]
   W <-->|review, edit, approve| C
-  J -.->|optional| M[GitHub Models<br/>category]
+  J -.->|optional| M[Gemini API<br/>category]
 ```
 
 1. The web app sniffs the file type from its first bytes, stores the file in Blob Storage, saves a
@@ -84,7 +84,7 @@ in the future.
 | Blob and Queue Storage | 5 GB for 12 months on a free account | Files deleted after 7 days by a lifecycle rule; a few cents a year at most after that |
 | Log Analytics | 5 GB of ingestion a month | Daily cap of 0.15 GB |
 | GitHub Actions and Container Registry | Free for public repositories | |
-| GitHub Models (optional) | Free, rate-limited | Off unless a token is set |
+| Gemini API (optional) | Free tier, rate-limited; Google may use free-tier prompts to improve its products | Off unless a key is set; only the vendor name and item descriptions are sent |
 
 ## Tech stack
 

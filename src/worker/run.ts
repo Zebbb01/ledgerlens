@@ -19,9 +19,9 @@ const token = async () => (await credential!.getToken("https://cognitiveservices
 
 const llmKey = env.LLM_API_KEY;
 const llm = {
-  endpoint: env.LLM_ENDPOINT ?? "https://models.github.ai/inference",
+  endpoint: env.LLM_ENDPOINT ?? "https://generativelanguage.googleapis.com/v1beta/openai",
   key: llmKey ?? "",
-  model: env.LLM_MODEL ?? "openai/gpt-4.1-mini",
+  model: env.LLM_MODEL ?? "gemini-3.5-flash-lite",
 };
 
 const deps: PipelineDeps = {

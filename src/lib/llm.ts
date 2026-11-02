@@ -1,5 +1,6 @@
 // Optional: an LLM suggests an expense category from a fixed chart of accounts.
-// Any OpenAI-compatible endpoint works; the default is GitHub Models' free tier.
+// Any OpenAI-compatible endpoint works; the default is the Gemini API's free tier
+// (GitHub Models, the first default, was retired on 2026-07-30).
 import type { Invoice } from "./extract.ts";
 
 export const CATEGORIES = [

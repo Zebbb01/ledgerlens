@@ -5,7 +5,20 @@ import type { Field, Invoice } from "./extract.ts";
 export type Check = { id: string; status: "pass" | "fail" | "warn" | "skip"; message: string };
 
 export const VAT_RATE = 0.12; // Philippine VAT
-const LOW_CONFIDENCE = 0.8;
+export const LOW_CONFIDENCE = 0.8;
+
+// Fields the confidence check looks at, with the names used in its message.
+export const KEY_FIELDS = [
+  ["vendor", "vendorName"],
+  ["invoice number", "invoiceId"],
+  ["invoice date", "invoiceDate"],
+  ["subtotal", "subtotal"],
+  ["tax", "tax"],
+  ["total", "total"],
+] as const satisfies readonly (readonly [string, keyof Invoice])[];
+
+export const isLowConfidence = (x: Field<unknown>) =>
+  x.value !== null && x.confidence !== null && x.confidence < LOW_CONFIDENCE;
 
 export const formatMoney = (cents: number) =>
   (cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -88,17 +101,9 @@ export function validate(inv: Invoice, ctx: { today: string; duplicateOf?: strin
   if (ctx.duplicateOf) add("duplicate", "fail", `Same vendor and invoice number as ${ctx.duplicateOf}.`);
   else add("duplicate", "pass", "No other document has this vendor and invoice number.");
 
-  const keyFields: [string, Field<unknown>][] = [
-    ["vendor", inv.vendorName],
-    ["invoice number", inv.invoiceId],
-    ["invoice date", inv.invoiceDate],
-    ["subtotal", inv.subtotal],
-    ["tax", inv.tax],
-    ["total", inv.total],
-  ];
-  const low = keyFields
-    .filter(([, x]) => x.value !== null && x.confidence !== null && x.confidence < LOW_CONFIDENCE)
-    .map(([name, x]) => `${name} (${Math.round((x.confidence ?? 0) * 100)}%)`);
+  const low = KEY_FIELDS.filter(([, key]) => isLowConfidence(inv[key])).map(
+    ([name, key]) => `${name} (${Math.round((inv[key].confidence ?? 0) * 100)}%)`,
+  );
   if (low.length) add("confidence", "warn", `Read with low confidence: ${low.join(", ")}. Check against the document.`);
   else add("confidence", "pass", "Key fields were read with high confidence.");
 

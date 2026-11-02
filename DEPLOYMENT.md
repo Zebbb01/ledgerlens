@@ -53,8 +53,9 @@ terraform apply -var "alert_email=you@example.com"
 first cent of actual cost, so anything that leaves the free tiers is noticed at once. Leave it out to skip
 the alert.
 
-Optional: turn on category suggestions with a GitHub token that has the `models:read` permission:
-`-var "llm_api_key=github_pat_..."`.
+Optional: turn on category suggestions with a free Gemini API key from Google AI Studio (no card):
+`-var "llm_api_key=..."`. Google may use free-tier prompts to improve its products; LedgerLens sends
+only the vendor name and item descriptions.
 
 Keep the Terraform state (`terraform.tfstate`): it is how you update or remove the resources later.
 

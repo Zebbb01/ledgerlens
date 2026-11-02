@@ -35,7 +35,7 @@ variable "alert_email" {
 }
 
 variable "llm_api_key" {
-  description = "Optional key for the category suggestion model (a GitHub token with models:read for GitHub Models). Empty turns the feature off."
+  description = "Optional key for the category suggestion model (a Gemini API key from Google AI Studio, free tier). Empty turns the feature off."
   type        = string
   default     = ""
   sensitive   = true

@@ -28,6 +28,12 @@ variable "monthly_page_cap" {
   default     = 450
 }
 
+variable "alert_email" {
+  description = "Email for the cost alert (a 1-unit monthly budget that warns at the first cent spent). Empty skips the alert."
+  type        = string
+  default     = ""
+}
+
 variable "llm_api_key" {
   description = "Optional key for the category suggestion model (a GitHub token with models:read for GitHub Models). Empty turns the feature off."
   type        = string

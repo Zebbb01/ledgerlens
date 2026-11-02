@@ -56,3 +56,5 @@ infra/.terraform/
 *.tfstate
 *.tfstate.*
 *.tfvars
+tfplan
+*.tfplan

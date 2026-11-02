@@ -238,6 +238,14 @@ resource "azurerm_container_app_environment" "main" {
   log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
   logs_destination           = "log-analytics"
   tags                       = local.tags
+
+  # Azure now creates every environment with this serverless profile. It is
+  # billed per second like the consumption plan and covered by the free grant;
+  # declaring it stops Terraform from trying to remove it on each apply.
+  workload_profile {
+    name                  = "Consumption"
+    workload_profile_type = "Consumption"
+  }
 }
 
 # The web app scales to zero when idle and to one replica at most.
@@ -246,6 +254,7 @@ resource "azurerm_container_app" "web" {
   container_app_environment_id = azurerm_container_app_environment.main.id
   resource_group_name          = azurerm_resource_group.main.name
   revision_mode                = "Single"
+  workload_profile_name        = "Consumption"
   tags                         = local.tags
 
   identity {
@@ -311,6 +320,7 @@ resource "azurerm_container_app_job" "worker" {
   location                     = azurerm_resource_group.main.location
   resource_group_name          = azurerm_resource_group.main.name
   container_app_environment_id = azurerm_container_app_environment.main.id
+  workload_profile_name        = "Consumption"
   replica_timeout_in_seconds   = 600
   replica_retry_limit          = 1
   tags                         = local.tags
@@ -401,4 +411,38 @@ resource "azurerm_role_assignment" "deploy" {
   scope                = azurerm_resource_group.main.id
   role_definition_name = "Contributor"
   principal_id         = azurerm_user_assigned_identity.deploy.principal_id
+}
+
+# A 1-unit monthly budget on the resource group: an email goes out at the first
+# cent of actual cost, so a change that leaves the free tiers is noticed at once.
+resource "azurerm_consumption_budget_resource_group" "guard" {
+  count             = var.alert_email == "" ? 0 : 1
+  name              = "budget-${local.name}"
+  resource_group_id = azurerm_resource_group.main.id
+  amount            = 1
+  time_grain        = "Monthly"
+
+  time_period {
+    start_date = formatdate("YYYY-MM-01'T'00:00:00Z", plantimestamp())
+  }
+
+  notification {
+    enabled        = true
+    threshold      = 1
+    operator       = "GreaterThan"
+    threshold_type = "Actual"
+    contact_emails = [var.alert_email]
+  }
+
+  notification {
+    enabled        = true
+    threshold      = 100
+    operator       = "GreaterThan"
+    threshold_type = "Forecasted"
+    contact_emails = [var.alert_email]
+  }
+
+  lifecycle {
+    ignore_changes = [time_period]
+  }
 }

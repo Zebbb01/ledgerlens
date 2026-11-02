@@ -22,8 +22,10 @@ fails or that service is billed.
 
 ## 1. Publish the image
 
-1. Push the repository to GitHub as `Zebbb01/ledgerlens` (or change `github_repo` and `image` in
-   `infra/variables.tf`).
+1. Push the repository to GitHub as `Zebbb01/ledgerlens`. For another repository, change `image` and
+   `github_oidc_subject_prefix` in `infra/variables.tf`; the prefix comes from
+   `gh api repos/OWNER/REPO/actions/oidc/customization/sub` (new repositories use immutable IDs, such as
+   `repo:Zebbb01@179115543/ledgerlens@1442479905`, and Azure rejects a sign-in whose subject differs).
 2. Merge a release into `main`. The **Deploy** workflow builds the image and pushes it to
    `ghcr.io/zebbb01/ledgerlens`. Its Azure step is skipped until step 3 is done.
 3. Container Apps pulls the image without credentials, so it must be public. An image published by a

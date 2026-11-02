@@ -58,7 +58,8 @@ function field<T>(f: DiField | undefined, read: (f: DiField) => T | undefined): 
   return { value, confidence: f?.confidence ?? null, page: f?.boundingRegions?.[0]?.pageNumber ?? null };
 }
 
-const text = (f: DiField) => f.valueString ?? f.content;
+// A name the model read across lines ("SPX\nEXPRESS") becomes one line.
+const text = (f: DiField) => (f.valueString ?? f.content)?.replace(/\s+/g, " ").trim();
 const day = (f: DiField) => f.valueDate;
 const cents = (f: DiField) => {
   const amount = f.valueCurrency?.amount ?? f.valueNumber;
@@ -72,6 +73,18 @@ function printed(content: string, label: string): Field<number> {
   const m = new RegExp(label + AMOUNT, "i").exec(content);
   if (!m) return empty();
   return { value: toCents(Number(m[1].replaceAll(",", ""))), confidence: null, page: null };
+}
+
+// A registered business name ends like this; logo text read as the vendor usually doesn't.
+const ENTITY = /\b(inc|corp|corporation|co|company|ltd|limited|llc|opc|plc|pte|pty)\.?$/i;
+
+// On real invoices the model sometimes takes the logo ("SPX EXPRESS") as the vendor and
+// puts the registered name ("SPX Philippines Inc.") in VendorAddressRecipient.
+function vendor(f: Record<string, DiField>): Field<string> {
+  const name = field(f.VendorName, text);
+  const recipient = field(f.VendorAddressRecipient, text);
+  const registered = (x: Field<string>) => x.value !== null && ENTITY.test(x.value);
+  return registered(recipient) && !registered(name) ? recipient : name;
 }
 
 // The model often misses a Philippine TIN printed as "VAT Reg. TIN: ...". The
@@ -90,7 +103,7 @@ export function normalize(result: AnalyzeResult): Invoice {
   const tin = field(f.VendorTaxId, text);
 
   return {
-    vendorName: field(f.VendorName, text),
+    vendorName: vendor(f),
     vendorTaxId: tin.value !== null ? tin : printedTin(content),
     customerName: field(f.CustomerName, text),
     invoiceId: field(f.InvoiceId, text),
@@ -101,10 +114,10 @@ export function normalize(result: AnalyzeResult): Invoice {
     discount: field(f.TotalDiscount, cents),
     tax: field(f.TotalTax, cents),
     total: field(f.InvoiceTotal, cents),
-    vatableSales: printed(content, String.raw`VAT-?able\s+Sales`),
+    vatableSales: printed(content, String.raw`(?:VAT-?able|VAT\s+STD)\s+Sales`),
     vatExemptSales: printed(content, String.raw`VAT[- ]?Exempt(?:\s+Sales)?`),
-    zeroRatedSales: printed(content, String.raw`Zero[- ]?Rated(?:\s+Sales)?`),
-    vatAmount: printed(content, String.raw`(?:VAT\s+Amount|12%\s*VAT|VAT\s*\(12%\))`),
+    zeroRatedSales: printed(content, String.raw`(?:Zero[- ]?Rated|VAT\s+ZERO)(?:\s+Sales)?`),
+    vatAmount: printed(content, String.raw`(?:VAT\s+Amount|12%\s*VAT|VAT\s*\(12%\)|(?:^|\n)VAT)`),
     lines: (f.Items?.valueArray ?? []).map(({ valueObject: o = {} }) => ({
       description: field(o.Description, text).value,
       quantity: field(o.Quantity, (x) => x.valueNumber).value,

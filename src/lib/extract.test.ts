@@ -121,6 +121,60 @@ describe("normalize", () => {
     expect(inv.vendorTaxId.value).toBe("111-222-333-000");
   });
 
+  it("reads the VAT breakdown in the layout Shopee's SPX invoices use", () => {
+    // Labels and values on separate lines, as Document Intelligence returns this table.
+    const content = [
+      "VAT REG. TIN: 010-259-049-00000",
+      "PH VAT STD sales",
+      "308.04",
+      "Subtotal",
+      "308.04",
+      "PH VAT EXEMPT sales",
+      "-",
+      "PH VAT ZERO sales",
+      "-",
+      "VAT",
+      "36.96",
+      "Total Amount Due (PHP)",
+      "345.00",
+    ].join("\n");
+
+    const inv = normalize(result({}, content));
+
+    expect(inv.vatableSales.value).toBe(30804);
+    expect(inv.vatAmount.value).toBe(3696);
+    expect(inv.vatExemptSales.value).toBeNull();
+    expect(inv.zeroRatedSales.value).toBeNull();
+  });
+
+  it("does not read a TIN or a VATable line as the VAT amount", () => {
+    const inv = normalize(result({}, "VAT REG. TIN: 010-259-049-00000\nVATable Sales 100.00\nVAT-Exempt Sales 0.00"));
+
+    expect(inv.vatAmount.value).toBeNull();
+  });
+
+  it("joins a name the model read across lines", () => {
+    const inv = normalize(result({ VendorName: str("SPX\nEXPRESS") }));
+
+    expect(inv.vendorName.value).toBe("SPX EXPRESS");
+  });
+
+  it("prefers the registered business name over logo text", () => {
+    const inv = normalize(
+      result({ VendorName: str("SPX\nEXPRESS", 0.91), VendorAddressRecipient: str("SPX Philippines Inc.", 0.93) }),
+    );
+
+    expect(inv.vendorName).toEqual({ value: "SPX Philippines Inc.", confidence: 0.93, page: 1 });
+  });
+
+  it("keeps a vendor name that is already a registered business name", () => {
+    const inv = normalize(
+      result({ VendorName: str("Bluepeak Office Supply Corp."), VendorAddressRecipient: str("Accounts Payable Dept.") }),
+    );
+
+    expect(inv.vendorName.value).toBe("Bluepeak Office Supply Corp.");
+  });
+
   it("reads '12% VAT' as the VAT amount", () => {
     const inv = normalize(result({}, "VATable Sales: P892.86\n12% VAT: P107.14"));
 

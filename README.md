@@ -15,7 +15,7 @@ It runs on Azure entirely within free tiers: a Next.js web app and a queue worke
 Apps**, files in **Blob Storage**, work handed over through **Queue Storage**, data in **Cosmos DB for
 MongoDB**, all provisioned with **Terraform** and deployed by **GitHub Actions** over OpenID Connect.
 
-![LedgerLens home: a sample invoice with the failed totals check, the read, check and approve steps, and the samples](docs/screenshots/landing-dark.png)
+![LedgerLens home on first visit: no documents yet, upload, and the five sample bills](docs/screenshots/landing-dark.png)
 
 ![The review screen for an invoice whose printed total does not add up: two failed checks first, the total flagged, approval blocked](docs/screenshots/review-blocked-dark.png)
 

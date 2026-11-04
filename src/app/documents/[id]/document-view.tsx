@@ -1,8 +1,10 @@
 "use client";
 
+// The review screen: the original on the left, what was read and checked on the
+// right, and the decision in a bar that stays in view.
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import type { Status } from "@/lib/db.ts";
 import { parseMoney } from "@/lib/edits.ts";
 import { toCsv } from "@/lib/exports.ts";
@@ -10,8 +12,8 @@ import type { Field, Invoice } from "@/lib/extract.ts";
 import { CATEGORIES } from "@/lib/llm.ts";
 import { fieldToFix, flaggedFields, summarize, type FieldKey } from "@/lib/review.ts";
 import { canApprove, formatMoney, type Check } from "@/lib/validate.ts";
-import type { ReactNode } from "react";
-import { StatusPill, buttonClass, focusRing } from "../../ui";
+import { toast } from "../../toast";
+import { Badge, Button, Icon, Skeleton, Spinner, StatusBadge, WORKING, focusRing, inputClass, selectClass } from "../../ui";
 
 type Doc = {
   id: string;
@@ -73,28 +75,26 @@ const CHECK_TITLE: Record<string, string> = {
   confidence: "Read confidence",
 };
 
-const CHECK_LOOK: Record<Check["status"], { word: string; mark: string; tone: string }> = {
-  pass: { word: "Passed", mark: "✓", tone: "text-pass" },
-  fail: { word: "Failed", mark: "✕", tone: "text-fail" },
-  warn: { word: "Check", mark: "!", tone: "text-warn" },
-  skip: { word: "Skipped", mark: "–", tone: "text-skip" },
+const CHECK_LOOK: Record<Check["status"], { word: string; icon: "check" | "x" | "alert" | "minus"; tone: string }> = {
+  pass: { word: "Passed", icon: "check", tone: "text-pass" },
+  fail: { word: "Failed", icon: "x", tone: "text-fail" },
+  warn: { word: "Check", icon: "alert", tone: "text-warn" },
+  skip: { word: "Skipped", icon: "minus", tone: "text-skip" },
 };
 
 const LABEL = Object.fromEntries(GROUPS.flatMap((g) => g.fields.map(([key, label]) => [key, label]))) as Record<string, string>;
-
 const FLAG_RING = { fail: "border-fail ring-1 ring-fail", warn: "border-warn ring-1 ring-warn", none: "" };
+const sectionLabel = "text-2xs font-semibold tracking-wider text-muted uppercase";
 
 function CheckItem({ check, children }: { check: Check; children?: ReactNode }) {
   const look = CHECK_LOOK[check.status];
   return (
-    <li className="flex gap-3 text-sm">
-      <span aria-hidden="true" className={`w-4 shrink-0 text-center font-bold ${look.tone}`}>
-        {look.mark}
-      </span>
+    <li className="flex gap-2.5 text-sm">
+      <Icon name={look.icon} size={15} className={`mt-0.5 ${look.tone}`} />
       <div className="min-w-0">
         <p>
           <span className="font-medium">{CHECK_TITLE[check.id] ?? check.id}</span>{" "}
-          <span className={`text-xs font-medium ${look.tone}`}>{look.word}</span>
+          <span className={`text-xs ${look.tone}`}>{look.word}</span>
         </p>
         <p className="text-muted">{check.message}</p>
         {children}
@@ -103,8 +103,7 @@ function CheckItem({ check, children }: { check: Check; children?: ReactNode }) 
   );
 }
 
-const show = (f: Field<unknown>, kind: Kind) =>
-  f.value === null ? "" : kind === "money" ? formatMoney(f.value as number) : String(f.value);
+const show = (f: Field<unknown>, kind: Kind) => (f.value === null ? "" : kind === "money" ? formatMoney(f.value as number) : String(f.value));
 
 function formFrom(inv: Invoice | null): Record<string, string> {
   if (!inv) return {};
@@ -122,8 +121,6 @@ function download(name: string, type: string, text: string) {
   URL.revokeObjectURL(url);
 }
 
-const inputClass = `w-full rounded-lg border border-line bg-surface px-3 py-2 text-base sm:text-sm read-only:bg-canvas ${focusRing}`;
-
 async function fetchDoc(id: string): Promise<Doc | "missing" | null> {
   const res = await fetch(`/api/documents/${id}`, { cache: "no-store" }).catch(() => null);
   if (res?.status === 404) return "missing";
@@ -135,8 +132,8 @@ export function DocumentView() {
   const [doc, setDoc] = useState<Doc | "missing" | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
   const [category, setCategory] = useState("");
-  const [message, setMessage] = useState<{ error: boolean; text: string } | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState<"save" | "approve" | "rerun" | null>(null);
   const [version, setVersion] = useState(0);
   const [now, setNow] = useState(() => Date.now());
 
@@ -152,14 +149,14 @@ export function DocumentView() {
     void fetchDoc(id).then((d) => {
       if (!live) return;
       if (d) receive(d);
-      else setMessage({ error: true, text: "Could not load this document. Refresh to try again." });
+      else setError("Could not load this document. Refresh to try again.");
     });
     return () => {
       live = false;
     };
   }, [id, version, receive]);
 
-  const waiting = doc !== null && doc !== "missing" && (doc.status === "queued" || doc.status === "processing");
+  const waiting = doc !== null && doc !== "missing" && WORKING.includes(doc.status);
   useEffect(() => {
     if (!waiting) return;
     const timer = setInterval(() => {
@@ -169,15 +166,13 @@ export function DocumentView() {
     return () => clearInterval(timer);
   }, [waiting]);
 
-  if (doc === null) return <p className="text-sm text-muted">{message?.text ?? "Loading the document…"}</p>;
+  if (doc === null) return error ? <p className="p-4 text-sm text-fail">{error}</p> : <PageSkeleton />;
   if (doc === "missing") {
     return (
-      <div className="max-w-xl">
-        <h1 className="text-xl font-semibold">Document not found</h1>
-        <p className="mt-2 text-muted">
-          It belongs to another browser, or it was deleted: demo documents are kept for 7 days.
-        </p>
-        <Link href="/" className={`mt-4 inline-block rounded text-brand hover:underline ${focusRing}`}>
+      <div className="mx-auto max-w-md px-4 py-16 text-center text-sm">
+        <p className="text-base font-medium">Document not found</p>
+        <p className="mt-1 text-muted">It belongs to another browser, or it was deleted: demo documents are kept for 7 days.</p>
+        <Link href="/" className={`mt-3 inline-block rounded-sm text-brand hover:underline ${focusRing}`}>
           Back to your documents
         </Link>
       </div>
@@ -211,12 +206,12 @@ export function DocumentView() {
 
   async function send(action?: "approve" | "rerun") {
     const fields = action === "rerun" ? {} : changes();
-    if (typeof fields === "string") return setMessage({ error: true, text: fields });
+    if (typeof fields === "string") return setError(fields);
     const body: Record<string, unknown> = action ? { action } : {};
     if (Object.keys(fields).length) body.fields = fields;
     if (action !== "rerun" && category !== (doc && doc !== "missing" ? (doc.category ?? "") : "")) body.category = category || null;
-    setSaving(true);
-    setMessage(null);
+    setSaving(action ?? "save");
+    setError(null);
     try {
       const res = await fetch(`/api/documents/${id}`, {
         method: "PATCH",
@@ -224,14 +219,14 @@ export function DocumentView() {
         body: JSON.stringify(body),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) return setMessage({ error: true, text: data.error ?? "Could not save. Try again." });
+      if (!res.ok) return setError(data.error ?? "Could not save. Try again.");
       receive(data);
-      const done = { approve: "Approved. Download the bill below.", rerun: "Queued again." } as const;
-      setMessage({ error: false, text: action ? done[action] : "Saved. The checks ran again." });
+      const done = { approve: "Approved. Download it for the books.", rerun: "Queued again" } as const;
+      toast(action ? done[action] : "Saved. The checks ran again.", "pass");
     } catch {
-      setMessage({ error: true, text: "Could not reach LedgerLens. Try again." });
+      setError("Could not reach LedgerLens. Try again.");
     } finally {
-      setSaving(false);
+      setSaving(null);
     }
   }
 
@@ -243,269 +238,285 @@ export function DocumentView() {
   const seconds = Math.max(0, Math.round((now - new Date(doc.createdAt).getTime()) / 1000));
   const blocked = !canApprove(doc.checks);
   const base = doc.fileName.replace(/\.[^.]+$/, "");
-  // What needs a person comes first; passed and skipped checks fold away.
   const summary = summarize(doc.checks);
+  // What needs a person comes first; passed and skipped checks fold away.
   const attention = doc.checks.filter((c) => c.status === "fail" || c.status === "warn");
   const settled = doc.checks.filter((c) => c.status === "pass" || c.status === "skip");
   const flags = inv && editable ? flaggedFields(doc.checks, inv) : {};
 
   return (
     <div>
-      <Link href="/" className={`rounded text-sm text-brand hover:underline ${focusRing}`}>
-        ← All documents
-      </Link>
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <h1 className="min-w-0 truncate text-xl font-semibold tracking-tight">{doc.fileName}</h1>
-        <StatusPill status={doc.status} testId="doc-status" />
+      <div className="sticky top-12 z-10 border-b border-line bg-surface">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-3 py-2 sm:px-4 lg:h-12 lg:flex-nowrap lg:py-0">
+          <Link href="/" className={`flex items-center gap-1 rounded-sm text-sm text-muted hover:text-ink ${focusRing}`}>
+            <Icon name="back" size={14} />
+            Documents
+          </Link>
+          <span aria-hidden="true" className="text-line-strong">
+            /
+          </span>
+          <h1 className="min-w-0 truncate text-base font-semibold">{doc.fileName}</h1>
+          <StatusBadge status={doc.status} testId="doc-status" />
+          {inv && (
+            <div className="ml-auto flex shrink-0 gap-1.5">
+              <Button
+                size="sm"
+                onClick={() =>
+                  download(`${base}.csv`, "text/csv", toCsv([{ fileName: doc.fileName, status: doc.status, category: doc.category, invoice: inv }]))
+                }
+              >
+                <Icon name="download" size={14} />
+                Download CSV
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => download(`${base}.json`, "application/json", JSON.stringify(doc, null, 2))}>
+                Download JSON
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="mt-2 space-y-1 text-sm text-muted">
-        {waiting && (
-          <p>
-            {doc.status === "queued" ? "Waiting for the worker" : "Reading the document"} ({seconds}s). In Azure the
-            worker starts from zero when a document arrives, so the first one can take up to a minute.
-          </p>
-        )}
-        {doc.cached && <p>Reused the analysis of an identical file, so no free pages were used.</p>}
-        {doc.status === "failed" && (
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="text-fail">{doc.error}</p>
-            <button type="button" className={buttonClass.secondary} disabled={saving} onClick={() => void send("rerun")}>
-              Run again
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="mt-6 grid items-start gap-6 lg:grid-cols-2">
-        <div className="overflow-hidden rounded-xl border border-line bg-surface lg:sticky lg:top-4">
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="border-b border-line bg-subtle lg:sticky lg:top-24 lg:h-[calc(100dvh-6rem)] lg:border-r lg:border-b-0">
           {doc.contentType === "application/pdf" ? (
-            <iframe title="Document preview" src={`/api/documents/${doc.id}/file#navpanes=0&view=FitH`} className="h-[70vh] w-full" />
+            <iframe title="Document preview" src={`/api/documents/${doc.id}/file#navpanes=0&view=FitH`} className="h-[60dvh] w-full lg:h-full" />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element -- a private, per-browser file
-            <img title="Document preview" alt="The uploaded document" src={`/api/documents/${doc.id}/file`} className="w-full" />
+            <img title="Document preview" alt="The uploaded document" src={`/api/documents/${doc.id}/file`} className="mx-auto max-h-full w-full object-contain" />
           )}
         </div>
 
-        {inv && (
-          <div className="space-y-6">
-            <section aria-labelledby="checks-heading" className="rounded-xl border border-line bg-surface p-5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 id="checks-heading" className="font-semibold">
-                  Checks
-                </h2>
-                <p className="flex flex-wrap gap-1.5 text-xs font-medium">
-                  {summary.failed > 0 && (
-                    <span className="rounded-full border border-fail/50 px-2 py-0.5 text-fail">{summary.failed} failed</span>
-                  )}
-                  {summary.warned > 0 && (
-                    <span className="rounded-full border border-warn/50 px-2 py-0.5 text-warn">{summary.warned} to check</span>
-                  )}
-                  <span className="rounded-full border border-pass/50 px-2 py-0.5 text-pass">{summary.passed} passed</span>
-                </p>
-              </div>
-              <p className="mt-1 text-sm text-muted">
-                {doc.status === "approved" ? "Approved. Download the bill below." : summary.next}
+        <div className="min-w-0">
+          {waiting && (
+            <div role="status" className="border-b border-line px-4 py-4 sm:px-5">
+              <p className="flex items-center gap-2 text-sm font-medium">
+                <Spinner className="text-brand" />
+                {doc.status === "queued" ? "Waiting for the reader" : "Reading the document"}
+                <span className="font-normal text-muted tabular-nums">{seconds} s</span>
               </p>
+              <p className="mt-1 text-xs text-muted">After a quiet spell the reader starts from zero, so the first document can take up to a minute.</p>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                {Array.from({ length: 6 }, (_, i) => (
+                  <div key={i} className="grid gap-1.5">
+                    <Skeleton className="h-3 w-1/3" />
+                    <Skeleton className="h-8 w-full rounded-md" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-              {attention.length > 0 && (
-                <ul className="mt-4 space-y-3">
-                  {attention.map((c) => {
-                    const target = editable ? fieldToFix(c, inv) : undefined;
-                    return (
-                      <CheckItem key={c.id} check={c}>
-                        {target && (
-                          <button
-                            type="button"
-                            onClick={() => document.getElementById(target)?.focus()}
-                            className={`mt-1 rounded text-xs font-medium text-brand hover:underline ${focusRing}`}
-                          >
-                            Go to {LABEL[target]}
-                          </button>
-                        )}
-                      </CheckItem>
-                    );
-                  })}
-                </ul>
-              )}
+          {doc.status === "failed" && (
+            <div role="alert" className="m-4 flex flex-wrap items-center gap-3 rounded-md bg-fail-soft px-3 py-2.5 text-sm text-fail sm:mx-5">
+              <Icon name="alert" size={15} />
+              <span className="min-w-0 flex-1">{doc.error}</span>
+              <Button size="sm" loading={saving === "rerun"} onClick={() => void send("rerun")}>
+                Run again
+              </Button>
+            </div>
+          )}
 
-              <details className="mt-4">
-                <summary className={`cursor-pointer rounded text-sm font-medium text-brand ${focusRing}`}>
-                  Show {summary.passed} passed{summary.skipped ? ` and ${summary.skipped} skipped` : ""}{" "}
-                  {summary.passed + summary.skipped === 1 ? "check" : "checks"}
-                </summary>
-                <ul className="mt-3 space-y-2.5">
-                  {settled.map((c) => (
-                    <CheckItem key={c.id} check={c} />
-                  ))}
-                </ul>
-              </details>
-            </section>
+          {inv && (
+            <>
+              <section aria-labelledby="checks-heading" className="border-b border-line px-4 py-4 sm:px-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 id="checks-heading" className={sectionLabel}>
+                    Checks
+                  </h2>
+                  <p className="flex flex-wrap gap-1">
+                    {summary.failed > 0 && <Badge tone="fail">{summary.failed} failed</Badge>}
+                    {summary.warned > 0 && <Badge tone="warn">{summary.warned} to check</Badge>}
+                    <Badge tone="pass">{summary.passed} passed</Badge>
+                  </p>
+                </div>
+                <p className="mt-1.5 text-sm text-ink-2">{doc.status === "approved" ? "Approved. Download the bill for the books." : summary.next}</p>
+                {doc.cached && <p className="mt-0.5 text-xs text-muted">Reused the analysis of an identical file, so no free pages were used.</p>}
 
-            <form onSubmit={onSubmit} className="space-y-6 rounded-xl border border-line bg-surface p-5">
-              {GROUPS.map((g) => (
-                <fieldset key={g.title}>
-                  <legend className="font-semibold">{g.title}</legend>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    {g.fields.map(([key, label, kind]) => {
-                      const f = inv[key] as Field<unknown>;
-                      const edited = doc.editedFields.includes(key);
-                      const low = !edited && f.confidence !== null && f.confidence < 0.8;
-                      const chip = edited
-                        ? "edited"
-                        : f.confidence !== null
-                          ? `${Math.round(f.confidence * 100)}%${low ? ", check" : ""}`
-                          : f.value !== null
-                            ? "from text"
-                            : "";
+                {attention.length > 0 && (
+                  <ul className="mt-3 grid gap-3">
+                    {attention.map((c) => {
+                      const target = editable ? fieldToFix(c, inv) : undefined;
                       return (
-                        <div key={key}>
-                          <div className="flex items-baseline justify-between gap-2">
-                            <label htmlFor={key} className="text-sm font-medium">
-                              {label}
-                            </label>
-                            {chip && (
-                              <span id={`${key}-note`} className={`text-xs ${low ? "text-warn" : "text-muted"}`}>
-                                {chip}
-                              </span>
-                            )}
-                          </div>
-                          <input
-                            id={key}
-                            type={kind === "date" ? "date" : "text"}
-                            inputMode={kind === "money" ? "decimal" : undefined}
-                            readOnly={!editable}
-                            aria-describedby={chip ? `${key}-note` : undefined}
-                            aria-invalid={flags[key as FieldKey] === "fail" || undefined}
-                            value={form[key] ?? ""}
-                            onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                            className={`mt-1 ${inputClass} ${kind === "money" ? "text-right tabular-nums" : ""} ${FLAG_RING[flags[key as FieldKey] ?? "none"]}`}
-                          />
-                        </div>
+                        <CheckItem key={c.id} check={c}>
+                          {target && (
+                            <button
+                              type="button"
+                              onClick={() => document.getElementById(target)?.focus()}
+                              className={`mt-0.5 rounded-sm text-xs font-medium text-brand hover:underline ${focusRing}`}
+                            >
+                              Go to {LABEL[target]}
+                            </button>
+                          )}
+                        </CheckItem>
                       );
                     })}
-                    {g.title === "Bill" && (
-                      <div>
-                        <label htmlFor="currency" className="text-sm font-medium">
-                          Currency
-                        </label>
-                        <input
-                          id="currency"
-                          maxLength={3}
-                          readOnly={!editable}
-                          value={form.currency ?? ""}
-                          onChange={(e) => setForm({ ...form, currency: e.target.value })}
-                          className={`mt-1 uppercase ${inputClass}`}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </fieldset>
-              ))}
+                  </ul>
+                )}
 
-              <div>
-                <div className="flex items-baseline justify-between gap-2">
-                  <label htmlFor="category" className="text-sm font-medium">
-                    Category
-                  </label>
-                  {doc.categorySource === "model" && <span className="text-xs text-muted">suggested by the model</span>}
-                </div>
-                <select
-                  id="category"
-                  disabled={!editable}
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className={`mt-1 ${inputClass}`}
-                >
-                  <option value="">Not set</option>
-                  {CATEGORIES.map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
+                <details className="group mt-3">
+                  <summary className={`flex w-fit cursor-pointer list-none items-center gap-1 rounded-sm text-xs font-medium text-brand ${focusRing}`}>
+                    <Icon name="chevron" size={14} className="-rotate-90 transition-transform group-open:rotate-0" />
+                    Show {summary.passed} passed{summary.skipped ? ` and ${summary.skipped} skipped` : ""} {summary.passed + summary.skipped === 1 ? "check" : "checks"}
+                  </summary>
+                  <ul className="mt-2.5 grid gap-2">
+                    {settled.map((c) => (
+                      <CheckItem key={c.id} check={c} />
+                    ))}
+                  </ul>
+                </details>
+              </section>
 
-              {inv.lines.length > 0 && (
-                <div>
-                  <h2 className="font-semibold">Line items</h2>
-                  <div className="mt-2 overflow-x-auto">
-                    <table className="w-full min-w-104 text-sm">
-                      <thead>
-                        <tr className="border-b border-line text-left text-xs text-muted">
-                          <th className="py-2 pr-3 font-medium">Description</th>
-                          <th className="py-2 pr-3 text-right font-medium">Qty</th>
-                          <th className="py-2 pr-3 text-right font-medium">Unit price</th>
-                          <th className="py-2 text-right font-medium">Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody className="tabular-nums">
-                        {inv.lines.map((l, i) => (
-                          <tr key={i} className="border-b border-line last:border-0">
-                            <td className="py-2 pr-3">{l.description ?? "—"}</td>
-                            <td className="py-2 pr-3 text-right">{l.quantity ?? "—"}</td>
-                            <td className="py-2 pr-3 text-right">{l.unitPrice === null ? "—" : formatMoney(l.unitPrice)}</td>
-                            <td className="py-2 text-right">{l.amount === null ? "—" : formatMoney(l.amount)}</td>
+              <form onSubmit={onSubmit}>
+                {GROUPS.map((g) => (
+                  <fieldset key={g.title} className="border-b border-line px-4 py-4 sm:px-5">
+                    <legend className={`${sectionLabel} float-left mb-3 w-full`}>{g.title}</legend>
+                    <div className="clear-both grid gap-x-3 gap-y-2.5 sm:grid-cols-2">
+                      {g.fields.map(([key, label, kind]) => {
+                        const f = inv[key] as Field<unknown>;
+                        const edited = doc.editedFields.includes(key);
+                        const low = !edited && f.confidence !== null && f.confidence < 0.8;
+                        const chip = edited
+                          ? "edited"
+                          : f.confidence !== null
+                            ? `${Math.round(f.confidence * 100)}%${low ? ", check" : ""}`
+                            : f.value !== null
+                              ? "from text"
+                              : "";
+                        return (
+                          <div key={key}>
+                            <div className="mb-1 flex items-baseline justify-between gap-2">
+                              <label htmlFor={key} className="text-sm text-ink-2">
+                                {label}
+                              </label>
+                              {chip && (
+                                <span id={`${key}-note`} className={`text-2xs tabular-nums ${low ? "font-medium text-warn" : "text-muted"}`}>
+                                  {chip}
+                                </span>
+                              )}
+                            </div>
+                            <input
+                              id={key}
+                              type={kind === "date" ? "date" : "text"}
+                              inputMode={kind === "money" ? "decimal" : undefined}
+                              readOnly={!editable}
+                              aria-describedby={chip ? `${key}-note` : undefined}
+                              aria-invalid={flags[key as FieldKey] === "fail" || undefined}
+                              value={form[key] ?? ""}
+                              onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                              className={`${inputClass} ${kind === "money" ? "text-right tabular-nums" : ""} ${FLAG_RING[flags[key as FieldKey] ?? "none"]}`}
+                            />
+                          </div>
+                        );
+                      })}
+                      {g.title === "Bill" && (
+                        <div>
+                          <label htmlFor="currency" className="mb-1 block text-sm text-ink-2">
+                            Currency
+                          </label>
+                          <input
+                            id="currency"
+                            maxLength={3}
+                            readOnly={!editable}
+                            value={form.currency ?? ""}
+                            onChange={(e) => setForm({ ...form, currency: e.target.value })}
+                            className={`uppercase ${inputClass}`}
+                          />
+                        </div>
+                      )}
+                      {g.title === "Bill" && (
+                        <div>
+                          <div className="mb-1 flex items-baseline justify-between gap-2">
+                            <label htmlFor="category" className="text-sm text-ink-2">
+                              Category
+                            </label>
+                            {doc.categorySource === "model" && <span className="text-2xs text-muted">suggested</span>}
+                          </div>
+                          <div className="relative">
+                            <select id="category" disabled={!editable} value={category} onChange={(e) => setCategory(e.target.value)} className={selectClass}>
+                              <option value="">Not set</option>
+                              {CATEGORIES.map((c) => (
+                                <option key={c}>{c}</option>
+                              ))}
+                            </select>
+                            <Icon name="chevron" size={14} className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-muted" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </fieldset>
+                ))}
+
+                {inv.lines.length > 0 && (
+                  <section aria-labelledby="lines-heading" className="border-b border-line px-4 py-4 sm:px-5">
+                    <h2 id="lines-heading" className={sectionLabel}>
+                      Line items
+                    </h2>
+                    <div className="mt-2 overflow-x-auto">
+                      <table className="w-full min-w-104 text-sm">
+                        <thead>
+                          <tr className="border-b border-line text-left text-xs text-muted">
+                            <th className="py-1.5 pr-3 font-medium">Description</th>
+                            <th className="py-1.5 pr-3 text-right font-medium">Qty</th>
+                            <th className="py-1.5 pr-3 text-right font-medium">Unit price</th>
+                            <th className="py-1.5 text-right font-medium">Amount</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="tabular-nums">
+                          {inv.lines.map((l, i) => (
+                            <tr key={i} className="border-b border-line last:border-0">
+                              <td className="py-1.5 pr-3">{l.description ?? "—"}</td>
+                              <td className="py-1.5 pr-3 text-right">{l.quantity ?? "—"}</td>
+                              <td className="py-1.5 pr-3 text-right">{l.unitPrice === null ? "—" : formatMoney(l.unitPrice)}</td>
+                              <td className="py-1.5 text-right">{l.amount === null ? "—" : formatMoney(l.amount)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
+                )}
+
+                {editable && (
+                  <div className="sticky bottom-0 flex flex-wrap items-center gap-2 border-t border-line bg-surface/95 px-4 py-2.5 backdrop-blur sm:px-5">
+                    <p className={`mr-auto text-xs ${blocked ? "text-fail" : "text-muted"}`}>
+                      {blocked ? "Fix the failed checks and save to approve." : "Changes run the checks again when saved."}
+                    </p>
+                    <Button type="submit" loading={saving === "save"} disabled={saving !== null}>
+                      Save changes
+                    </Button>
+                    <Button variant="primary" loading={saving === "approve"} disabled={saving !== null || blocked} onClick={() => void send("approve")}>
+                      Approve
+                    </Button>
                   </div>
-                </div>
-              )}
+                )}
+              </form>
+            </>
+          )}
 
-              {editable && (
-                <div className="flex flex-wrap items-center gap-3 border-t border-line pt-5">
-                  <button type="submit" className={buttonClass.secondary} disabled={saving}>
-                    Save changes
-                  </button>
-                  <button
-                    type="button"
-                    className={buttonClass.primary}
-                    disabled={saving || blocked}
-                    onClick={() => void send("approve")}
-                  >
-                    Approve
-                  </button>
-                  {blocked && <p className="text-sm text-muted">Fix the failed checks, then save, to approve.</p>}
-                </div>
-              )}
-              <p
-                role={message?.error ? "alert" : "status"}
-                className={`min-h-5 text-sm ${message?.error ? "text-fail" : "text-muted"}`}
-              >
-                {message?.text ?? ""}
-              </p>
-            </form>
+          {error && (
+            <p role="alert" className="px-4 py-3 text-sm text-fail sm:px-5">
+              {error}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
-            <section aria-labelledby="export-heading" className="rounded-xl border border-line bg-surface p-5">
-              <h2 id="export-heading" className="font-semibold">
-                Export
-              </h2>
-              <p className="mt-1 text-sm text-muted">One row per line item, ready for a bill import.</p>
-              <div className="mt-3 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={buttonClass.secondary}
-                  onClick={() =>
-                    download(
-                      `${base}.csv`,
-                      "text/csv",
-                      toCsv([{ fileName: doc.fileName, status: doc.status, category: doc.category, invoice: inv }]),
-                    )
-                  }
-                >
-                  Download CSV
-                </button>
-                <button
-                  type="button"
-                  className={buttonClass.secondary}
-                  onClick={() => download(`${base}.json`, "application/json", JSON.stringify(doc, null, 2))}
-                >
-                  Download JSON
-                </button>
-              </div>
-            </section>
-          </div>
-        )}
+function PageSkeleton() {
+  return (
+    <div aria-label="Loading the document" className="grid lg:grid-cols-2">
+      <div className="h-[60dvh] bg-subtle lg:h-[calc(100dvh-3rem)]" />
+      <div className="grid content-start gap-3 p-5">
+        <Skeleton className="h-4 w-1/3" />
+        <Skeleton className="h-3 w-2/3" />
+        <Skeleton className="h-3 w-1/2" />
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          {Array.from({ length: 6 }, (_, i) => (
+            <Skeleton key={i} className="h-8 w-full rounded-md" />
+          ))}
+        </div>
       </div>
     </div>
   );

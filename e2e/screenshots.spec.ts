@@ -9,7 +9,8 @@ test.use({ viewport: { width: 1440, height: 900 }, channel: "chromium", deviceSc
 
 async function run(page: Page, title: string, status: string) {
   await page.goto("/");
-  await page.getByRole("button", { name: new RegExp(title) }).click();
+  await page.getByRole("button", { name: "Try a sample" }).click();
+  await page.getByRole("dialog", { name: "Try a sample" }).getByRole("button", { name: new RegExp(title) }).click();
   await expect(page.getByTestId("doc-status")).toHaveText(status, { timeout: 60_000 });
   return page.url();
 }
@@ -19,7 +20,7 @@ for (const scheme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     const suffix = scheme === "dark" ? "-dark" : "";
     await page.goto("/");
-    await expect(page.getByText("No documents yet.")).toBeVisible();
+    await expect(page.getByText("No documents yet")).toBeVisible();
     await page.screenshot({ path: `docs/screenshots/landing${suffix}.png`, caret: "initial" });
 
     await run(page, "SaaS invoice", "Ready to approve");
@@ -34,7 +35,7 @@ for (const scheme of ["light", "dark"] as const) {
     await page.waitForTimeout(1500);
     await page.screenshot({ path: `docs/screenshots/review-ready${suffix}.png`, caret: "initial" });
 
-    await page.goto("/#add");
+    await page.goto("/");
     await expect(page.getByRole("row")).toHaveCount(5);
     await page.screenshot({ path: `docs/screenshots/home${suffix}.png`, caret: "initial" });
     expect(blocked).toContain("/documents/");

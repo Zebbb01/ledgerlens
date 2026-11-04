@@ -1,11 +1,5 @@
-import { Hero } from "./hero";
-import { Workbench } from "./workbench";
+import { Documents } from "./documents";
 
 export default function Home() {
-  return (
-    <>
-      <Hero />
-      <Workbench />
-    </>
-  );
+  return <Documents />;
 }

@@ -3,7 +3,8 @@ import { expect, test, type Page } from "@playwright/test";
 
 async function runSample(page: Page, title: string) {
   await page.goto("/");
-  await page.getByRole("button", { name: new RegExp(title) }).click();
+  await page.getByRole("button", { name: "Try a sample" }).click();
+  await page.getByRole("dialog", { name: "Try a sample" }).getByRole("button", { name: new RegExp(title) }).click();
   await expect(page).toHaveURL(/\/documents\/[\w-]+$/);
 }
 
@@ -25,7 +26,8 @@ test("a sample VAT invoice is read, passes every check and can be approved", asy
   await page.getByRole("button", { name: "Approve" }).click();
   await expect(status(page)).toHaveText("Approved");
 
-  const download = page.waitForEvent("download");
+  // The PDF preview can also arrive as a download in headless Chromium; take the CSV.
+  const download = page.waitForEvent("download", { predicate: (d) => d.suggestedFilename().endsWith(".csv") });
   await page.getByRole("button", { name: "Download CSV" }).click();
   const csv = await readFile(await (await download).path(), "utf8");
   expect(csv).toContain("Bluepeak Office Supply Corp.,123-456-789-000,INV-2026-1042");

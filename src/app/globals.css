@@ -1,25 +1,82 @@
 @import "tailwindcss";
 
-/* LedgerLens tokens. One accent (indigo); green, red and amber are reserved for
-   check results, because in accounting they already mean pass, fail and caution. */
+/* LedgerLens tokens. A bookkeeping tool is used for hours and its mistakes cost
+   money, so it is dense and quiet: a neutral ramp does most of the work, one
+   indigo accent marks what you can act on, and green, red and amber are reserved
+   for check results, because in accounting they already mean pass, fail and
+   caution. One family (IBM Plex Sans), a 1.2 type scale, flat hairline borders;
+   only things that float (dialogs, toasts) cast a shadow. */
 @theme {
-  --color-canvas: #f5f6f8;
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.375rem;
+  --text-lg: 1rem;
+  --text-lg--line-height: 1.5rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  --color-canvas: #f7f8fa;
   --color-surface: #ffffff;
-  --color-ink: #111827;
-  --color-muted: #4b5563;
-  --color-line: #d8dce3;
+  --color-subtle: #f2f4f7;
+  --color-selected: #eef0ff;
+  --color-ink: #101828;
+  --color-ink-2: #344054;
+  --color-muted: #5d6779;
+  --color-line: #e4e7ec;
+  --color-line-strong: #cfd4dc;
   --color-brand: #4338ca;
   --color-brand-strong: #3730a3;
+  --color-brand-soft: #eef0ff;
   --color-on-brand: #ffffff;
-  --color-pass: #15803d;
-  --color-fail: #b91c1c;
-  --color-warn: #a16207;
-  --color-skip: #6b7280;
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-pass: #067647;
+  --color-pass-soft: #ecfdf3;
+  --color-fail: #b42318;
+  --color-fail-soft: #fef3f2;
+  --color-warn: #a74804;
+  --color-warn-soft: #fffaeb;
+  --color-skip: #5d6779;
+
+  --shadow-float: 0 1px 2px rgb(16 24 40 / 0.06), 0 12px 32px -8px rgb(16 24 40 / 0.18);
+
+  --animate-spin-slow: spin 0.9s linear infinite;
+  --animate-pulse-soft: pulse-soft 1.6s ease-in-out infinite;
+  --animate-pop-in: pop-in 160ms ease-out;
+  --animate-slide-in: slide-in 200ms ease-out;
 }
 
-/* Lets the browser draw scrollbars, date pickers and selects to match the theme. */
+@keyframes pulse-soft {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* Lets the browser draw scrollbars and date pickers to match the theme. */
 :root {
   color-scheme: light;
 }
@@ -27,32 +84,44 @@
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --color-canvas: #0b0d12;
-    --color-surface: #13161d;
-    --color-ink: #e5e7eb;
-    --color-muted: #9ca3af;
-    --color-line: #2a303c;
+    --color-canvas: #0c0f14;
+    --color-surface: #12161d;
+    --color-subtle: #191e27;
+    --color-selected: #1c1d3a;
+    --color-ink: #e6e9ef;
+    --color-ink-2: #c4cad4;
+    --color-muted: #959fb0;
+    --color-line: #242b36;
+    --color-line-strong: #323b48;
     --color-brand: #a5b4fc;
     --color-brand-strong: #c7d2fe;
-    --color-on-brand: #111827;
-    --color-pass: #4ade80;
-    --color-fail: #f87171;
-    --color-warn: #fbbf24;
-    --color-skip: #9ca3af;
+    --color-brand-soft: #1c1d3a;
+    --color-on-brand: #0c0f14;
+    --color-pass: #4ccf8d;
+    --color-pass-soft: #0d2a1d;
+    --color-fail: #f97a6e;
+    --color-fail-soft: #2e1513;
+    --color-warn: #f6b54a;
+    --color-warn-soft: #2c2111;
+    --color-skip: #959fb0;
+    --shadow-float: 0 1px 2px rgb(0 0 0 / 0.3), 0 16px 40px -8px rgb(0 0 0 / 0.6);
   }
 }
 
-/* A faint dot grid behind the hero visual. */
-.dot-grid {
-  background-image: radial-gradient(color-mix(in oklab, var(--color-ink) 16%, transparent) 1px, transparent 1px);
-  background-size: 18px 18px;
-  mask-image: radial-gradient(closest-side, black, transparent);
+dialog::backdrop {
+  background: rgb(12 15 20 / 0.45);
+}
+
+html:has(dialog[open]) {
+  overflow: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
